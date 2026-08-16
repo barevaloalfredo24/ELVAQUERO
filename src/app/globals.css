@@ -1,0 +1,69 @@
+/* =====================================================================
+   ESTILOS GLOBALES Y TEMA "EL VAQUERO"
+   ---------------------------------------------------------------------
+   Tailwind CSS v4 configura el tema mediante la directiva @theme:
+   cada variable --color-* genera utilidades como bg-marron-500, etc.
+   Paleta inspirada en tonos de cuero, madera y tierra (estética vaquera).
+   ===================================================================== */
+
+@import "tailwindcss";
+
+/* Paleta de colores personalizada de la marca. */
+@theme {
+  /* Fondo crema / papel. */
+  --color-crema: #faf5ee;
+
+  /* Gama de marrones (cuero). */
+  --color-marron-50: #faf5ee;
+  --color-marron-100: #f2e7d7;
+  --color-marron-200: #e4cdb0;
+  --color-marron-300: #d3ab80;
+  --color-marron-400: #c08a57;
+  --color-marron-500: #a96a3a;
+  --color-marron-600: #8f5430;
+  --color-marron-700: #74422a;
+  --color-marron-800: #5c3423;
+  --color-marron-900: #46271b;
+  --color-marron-950: #2a1610;
+
+  /* Acento dorado (detalles y acciones). */
+  --color-dorado: #c98a3d;
+  --color-dorado-oscuro: #a9702e;
+
+  /* Fuentes: sans para texto, serif (Playfair) para títulos. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), Georgia, serif;
+}
+
+/* Estilos base del documento. */
+html {
+  scroll-behavior: smooth;
+  /* Deja espacio para el encabezado fijo al hacer scroll a anclas. */
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background-color: var(--color-crema);
+  color: var(--color-marron-900);
+  font-family: var(--font-sans);
+}
+
+/* Contenedor centrado reutilizable en todas las páginas. */
+.contenedor {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 80rem; /* 1280px */
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .contenedor {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .contenedor {
+    padding-inline: 2rem;
+  }
+}

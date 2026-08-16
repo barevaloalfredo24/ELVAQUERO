@@ -1,0 +1,115 @@
+// =====================================================================
+// DATOS DE PRUEBA: ÓRDENES
+// ---------------------------------------------------------------------
+// Simulan la tabla "ordenes" + "lineas_orden". Se usan para alimentar
+// el panel de pedidos y las estadísticas del administrador.
+// =====================================================================
+
+import type { Orden } from "@/lib/tipos";
+
+export const ordenes: Orden[] = [
+  {
+    id: "ORD-1001",
+    clienteId: "u-1",
+    clienteNombre: "Carlos Herrera",
+    clienteEmail: "carlos.herrera@example.com",
+    items: [
+      { productoId: "p-bota-rodeo", nombre: "Bota Vaquera Clásica Rodeo", variante: "Talla 42 · Café", cantidad: 1, precioUnitario: 1250, subtotal: 1250 },
+      { productoId: "p-cinturon-toro", nombre: "Cinturón de Cuero Toro", variante: "Talla 36 · Café", cantidad: 1, precioUnitario: 280, subtotal: 280 },
+    ],
+    subtotal: 1530,
+    envio: 40,
+    total: 1570,
+    metodoPago: "tarjeta",
+    estado: "entregada",
+    direccionEnvio: "Zona 1, Ciudad de Guatemala",
+    telefono: "+502 5555 1010",
+    fecha: "2026-06-02T10:00:00.000Z",
+  },
+  {
+    id: "ORD-1002",
+    clienteId: "u-2",
+    clienteNombre: "María López",
+    clienteEmail: "maria.lopez@example.com",
+    items: [
+      { productoId: "p-sombrero-ranchero", nombre: "Sombrero de Fieltro Ranchero", variante: "Talla 58 · Negro", cantidad: 1, precioUnitario: 450, subtotal: 450 },
+    ],
+    subtotal: 450,
+    envio: 35,
+    total: 485,
+    metodoPago: "contra_entrega",
+    estado: "pago_pendiente",
+    direccionEnvio: "Antigua Guatemala, Sacatepéquez",
+    telefono: "+502 5555 2020",
+    fecha: "2026-06-18T15:30:00.000Z",
+  },
+  {
+    id: "ORD-1003",
+    clienteId: "u-4",
+    clienteNombre: "Ana Morales",
+    clienteEmail: "ana.morales@example.com",
+    items: [
+      { productoId: "p-jeans-rodeo", nombre: "Jeans Vaquero Rodeo", variante: "Talla 34 · Azul", cantidad: 2, precioUnitario: 420, subtotal: 840 },
+      { productoId: "p-camisa-western", nombre: "Camisa Denim Western", variante: "Talla M · Azul", cantidad: 1, precioUnitario: 280, subtotal: 280 },
+    ],
+    subtotal: 1120,
+    envio: 45,
+    total: 1165,
+    metodoPago: "tarjeta",
+    estado: "enviada",
+    direccionEnvio: "Quetzaltenango",
+    telefono: "+502 5555 4040",
+    fecha: "2026-07-05T12:00:00.000Z",
+  },
+  {
+    id: "ORD-1004",
+    clienteId: "u-1",
+    clienteNombre: "Carlos Herrera",
+    clienteEmail: "carlos.herrera@example.com",
+    items: [
+      { productoId: "p-hebilla-estrella", nombre: "Hebilla de Acero Estrella", variante: "Talla Única · Plata", cantidad: 3, precioUnitario: 150, subtotal: 450 },
+    ],
+    subtotal: 450,
+    envio: 30,
+    total: 480,
+    metodoPago: "tarjeta",
+    estado: "pagada",
+    direccionEnvio: "Zona 1, Ciudad de Guatemala",
+    telefono: "+502 5555 1010",
+    fecha: "2026-07-22T09:15:00.000Z",
+  },
+  {
+    id: "ORD-1005",
+    clienteId: "u-4",
+    clienteNombre: "Ana Morales",
+    clienteEmail: "ana.morales@example.com",
+    items: [
+      { productoId: "p-bota-avestruz", nombre: "Bota de Avestruz Premium", variante: "Talla 41 · Cognac", cantidad: 1, precioUnitario: 2400, subtotal: 2400 },
+    ],
+    subtotal: 2400,
+    envio: 50,
+    total: 2450,
+    metodoPago: "contra_entrega",
+    estado: "pendiente",
+    direccionEnvio: "Quetzaltenango",
+    telefono: "+502 5555 4040",
+    fecha: "2026-08-01T17:45:00.000Z",
+  },
+  {
+    id: "ORD-1006",
+    clienteId: "u-2",
+    clienteNombre: "María López",
+    clienteEmail: "maria.lopez@example.com",
+    items: [
+      { productoId: "p-panuelo-norteno", nombre: "Pañuelo de Seda Norteño", variante: "Talla Única · Rojo", cantidad: 2, precioUnitario: 90, subtotal: 180 },
+    ],
+    subtotal: 180,
+    envio: 25,
+    total: 205,
+    metodoPago: "tarjeta",
+    estado: "entregada",
+    direccionEnvio: "Antigua Guatemala, Sacatepéquez",
+    telefono: "+502 5555 2020",
+    fecha: "2026-08-10T11:20:00.000Z",
+  },
+];
