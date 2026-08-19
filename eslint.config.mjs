@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // El backend tiene su propio ESLint (backend/eslint.config.mjs).
+    "backend/**",
   ]),
 ]);
 

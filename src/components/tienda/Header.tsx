@@ -10,22 +10,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { categorias } from "@/lib/datos";
+import { emojiCategoria } from "@/lib/emoji";
 import { useCarrito } from "@/lib/contexto/carrito";
 import { useAuth } from "@/lib/contexto/auth";
+import { BuscadorProductos } from "./BuscadorProductos";
 
 // Pequeños iconos SVG en línea (evitan una dependencia externa).
-function IconoBusqueda() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="11" cy="11" r="7" />
-      <path d="M21 21l-4.3-4.3" />
-    </svg>
-  );
-}
-
 function IconoCarrito() {
   return (
     <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
@@ -66,22 +58,12 @@ export function Header() {
   const { usuario, autenticado, esAdmin, cerrarSesion } = useAuth();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [categoriasAbiertas, setCategoriasAbiertas] = useState(false);
-  const router = useRouter();
 
   // Enlaces principales de la navegación de escritorio.
   const enlaces = [
     { href: "/", etiqueta: "Inicio" },
     { href: "/catalogo", etiqueta: "Catálogo" },
-    { href: "/catalogo?oferta=1", etiqueta: "Ofertas" },
   ];
-
-  // Maneja el envío de la búsqueda (navega al catálogo con ?busqueda=).
-  function buscar(evento: React.FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
-    const datos = new FormData(evento.currentTarget);
-    const termino = String(datos.get("busqueda") ?? "").trim();
-    router.push(termino ? `/catalogo?busqueda=${encodeURIComponent(termino)}` : "/catalogo");
-  }
 
   // Cierra el menú móvil cuando se navega.
   function navegarYCerrar() {
@@ -118,24 +100,13 @@ export function Header() {
           </span>
         </Link>
 
-        {/* Barra de búsqueda (oculta en móvil). */}
-        <form onSubmit={buscar} className="hidden flex-1 justify-center md:flex">
-          <div className="relative w-full max-w-md">
-            <input
-              name="busqueda"
-              type="search"
-              placeholder="Buscar botas, sombreros, cinturones…"
-              className="w-full rounded-full border border-marron-200 bg-white py-2 pl-4 pr-10 text-sm outline-none focus:border-marron-500"
-            />
-            <button
-              type="submit"
-              aria-label="Buscar"
-              className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-marron-600 hover:bg-marron-100"
-            >
-              <IconoBusqueda />
-            </button>
-          </div>
-        </form>
+        {/* Barra de búsqueda con autocompletado (oculta en móvil). */}
+        <div className="hidden flex-1 justify-center md:flex">
+          <BuscadorProductos
+            placeholder="Buscar botas, sombreros, cinturones…"
+            className="w-full max-w-md"
+          />
+        </div>
 
         {/* Acciones: cuenta y carrito. */}
         <div className="flex items-center gap-1">
@@ -212,7 +183,7 @@ export function Header() {
                     onClick={() => setCategoriasAbiertas(false)}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-marron-800 hover:bg-marron-50"
                   >
-                    <span>{c.icono}</span>
+                    <span>{emojiCategoria(c.slug)}</span>
                     {c.nombre}
                   </Link>
                 ))}
@@ -227,19 +198,9 @@ export function Header() {
         <div className="border-t border-marron-100 bg-crema md:hidden">
           <div className="contenedor flex flex-col gap-1 py-3">
             {/* Búsqueda en móvil. */}
-            <form onSubmit={(e) => { buscar(e); navegarYCerrar(); }} className="mb-2">
-              <div className="relative">
-                <input
-                  name="busqueda"
-                  type="search"
-                  placeholder="Buscar productos…"
-                  className="w-full rounded-full border border-marron-200 bg-white py-2 pl-4 pr-10 text-sm outline-none focus:border-marron-500"
-                />
-                <button type="submit" aria-label="Buscar" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-marron-600">
-                  <IconoBusqueda />
-                </button>
-              </div>
-            </form>
+            <div className="mb-2">
+              <BuscadorProductos placeholder="Buscar productos…" />
+            </div>
 
             {enlaces.map((e) => (
               <Link
@@ -263,7 +224,7 @@ export function Header() {
                 onClick={navegarYCerrar}
                 className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-marron-800 hover:bg-marron-100"
               >
-                <span>{c.icono}</span>
+                <span>{emojiCategoria(c.slug)}</span>
                 {c.nombre}
               </Link>
             ))}

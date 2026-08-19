@@ -6,7 +6,7 @@
 // y precio, tal como lo pide el modelo de datos del proyecto.
 // =====================================================================
 
-import type { Producto, Variante } from "@/lib/tipos";
+import type { Producto, Variante } from "../tipos";
 
 // Helper local para construir variantes de forma compacta.
 // Genera un id único dentro del producto a partir de talla + color.

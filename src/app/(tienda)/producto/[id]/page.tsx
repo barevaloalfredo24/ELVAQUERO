@@ -10,7 +10,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  categoriaDe,
   obtenerProductoPorId,
   obtenerProductos,
   obtenerProductosRelacionados,
@@ -48,7 +47,6 @@ export default async function PaginaProducto({
   const producto = await obtenerProductoPorId(id);
   if (!producto) notFound();
 
-  const categoria = categoriaDe(producto);
   const relacionados = await obtenerProductosRelacionados(producto.categoriaId, producto.id);
 
   return (
@@ -58,11 +56,11 @@ export default async function PaginaProducto({
         <Link href="/" className="hover:text-marron-800">Inicio</Link>
         <span className="mx-1">/</span>
         <Link href="/catalogo" className="hover:text-marron-800">Catálogo</Link>
-        {categoria && (
+        {producto.categoriaSlug && (
           <>
             <span className="mx-1">/</span>
-            <Link href={`/catalogo?categoria=${categoria.slug}`} className="hover:text-marron-800">
-              {categoria.nombre}
+            <Link href={`/catalogo?categoria=${producto.categoriaSlug}`} className="hover:text-marron-800">
+              {producto.categoriaNombre}
             </Link>
           </>
         )}
@@ -81,7 +79,7 @@ export default async function PaginaProducto({
         <div className="flex flex-col gap-4">
           <div>
             <span className="text-sm font-medium uppercase tracking-wide text-marron-500">
-              {categoria?.nombre}
+              {producto.categoriaNombre}
             </span>
             <h1 className="mt-1 font-display text-3xl font-bold text-marron-900">
               {producto.nombre}

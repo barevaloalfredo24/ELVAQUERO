@@ -1,90 +1,102 @@
 // =====================================================================
-// SERVICIO DE ADMINISTRACIÓN
+// SERVICIO DE ADMINISTRACIÓN (frontend)
 // ---------------------------------------------------------------------
-// Funciones que alimentan el panel administrativo: estadísticas,
-// pedidos, clientes y alertas de inventario. Igual que el catálogo,
-// hoy leen datos mock y luego pasarán a consumir la API REST.
+// Consume los endpoints del panel admin. Mantiene un respaldo con datos
+// mock si la API no responde.
 // =====================================================================
 
-import { ordenes, productos, usuarios } from "@/lib/datos";
-import type { EstadisticasAdmin, Orden, Producto, Usuario } from "@/lib/tipos";
-import { simularLatencia } from "@/lib/util";
+import { ordenes, productos, usuarios, categorias } from "@/lib/datos";
+import type { Cupon, EstadisticasAdmin, Orden, Producto, Staff, Usuario } from "@/lib/tipos";
+import { peticion } from "@/lib/api";
 
-// Cálculo del total de una orden (subtotal + envío).
-const totalOrden = (o: Orden) => o.total;
+// Añade categoriaSlug/categoriaNombre a los productos del mock.
+function enriquecer(lista: Producto[]): Producto[] {
+  return lista.map((p) => {
+    const cat = categorias.find((c) => c.id === p.categoriaId);
+    return { ...p, categoriaSlug: cat?.slug ?? "", categoriaNombre: cat?.nombre ?? "" };
+  });
+}
 
-// Devuelve todas las órdenes, de la más reciente a la más antigua.
 export async function obtenerPedidos(): Promise<Orden[]> {
-  const ordenadas = [...ordenes].sort(
+  const desdeApi = await peticion<Orden[]>("/api/admin/pedidos");
+  if (desdeApi) return desdeApi;
+  return [...ordenes].sort(
     (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),
   );
-  return simularLatencia(ordenadas);
 }
 
-// Devuelve los clientes registrados (no administradores).
 export async function obtenerClientes(): Promise<Usuario[]> {
-  return simularLatencia(usuarios.filter((u) => u.rol === "cliente"));
+  const desdeApi = await peticion<Usuario[]>("/api/admin/clientes");
+  if (desdeApi) return desdeApi;
+  return usuarios.filter((u) => u.rol === "cliente");
 }
 
-// Devuelve los productos cuyo stock está por debajo de su umbral.
+export async function obtenerStaff(): Promise<Staff[]> {
+  const desdeApi = await peticion<Staff[]>("/api/admin/staff");
+  return desdeApi ?? [];
+}
+
+export async function obtenerCupones(): Promise<Cupon[]> {
+  const desdeApi = await peticion<Cupon[]>("/api/admin/cupones");
+  return desdeApi ?? [];
+}
+
 export async function obtenerAlertasStock(): Promise<Producto[]> {
-  const alertas = productos.filter((p) => p.stockTotal <= p.umbralStock);
-  return simularLatencia(alertas);
+  const desdeApi = await peticion<Producto[]>("/api/admin/alertas-stock");
+  if (desdeApi) return desdeApi;
+  return enriquecer(productos.filter((p) => p.stockTotal <= p.umbralStock));
 }
 
-// Devuelve todos los productos (para la tabla de administración).
 export async function obtenerProductosAdmin(): Promise<Producto[]> {
-  return simularLatencia([...productos]);
+  const desdeApi = await peticion<Producto[]>("/api/admin/productos");
+  if (desdeApi) return desdeApi;
+  return enriquecer([...productos]);
 }
 
-// Calcula las estadísticas resumidas del panel principal.
 export async function obtenerEstadisticas(): Promise<EstadisticasAdmin> {
-  // Total facturado solo de órdenes que no están canceladas.
-  const ordenesValidas = ordenes.filter((o) => o.estado !== "cancelada");
-  const ventasTotales = ordenesValidas.reduce((acc, o) => acc + totalOrden(o), 0);
-  const numeroOrdenes = ordenesValidas.length;
+  const desdeApi = await peticion<EstadisticasAdmin>("/api/admin/estadisticas");
+  if (desdeApi) return desdeApi;
+
+  // --- Respaldo con datos mock (si no hay backend) ---
+  const validas = ordenes.filter((o) => o.estado !== "cancelada");
+  const ventasTotales = validas.reduce((acc, o) => acc + o.total, 0);
+  const numeroOrdenes = validas.length;
   const ticketPromedio = numeroOrdenes ? ventasTotales / numeroOrdenes : 0;
 
-  // Agrupa ingresos por mes para la gráfica de barras.
   const porMes = new Map<string, number>();
-  for (const o of ordenesValidas) {
+  for (const o of validas) {
     const etiqueta = new Date(o.fecha).toLocaleDateString("es-GT", { month: "short" });
-    porMes.set(etiqueta, (porMes.get(etiqueta) ?? 0) + totalOrden(o));
+    porMes.set(etiqueta, (porMes.get(etiqueta) ?? 0) + o.total);
   }
   const ingresosPorMes = Array.from(porMes, ([etiqueta, total]) => ({ etiqueta, total }));
 
-  // Ventas por método de pago.
   const porMetodo = new Map<string, number>();
-  for (const o of ordenesValidas) {
+  for (const o of validas) {
     const clave = o.metodoPago === "tarjeta" ? "Tarjeta" : "Contra entrega";
-    porMetodo.set(clave, (porMetodo.get(clave) ?? 0) + totalOrden(o));
+    porMetodo.set(clave, (porMetodo.get(clave) ?? 0) + o.total);
   }
   const ventasPorMetodoPago = Array.from(porMetodo, ([etiqueta, total]) => ({ etiqueta, total }));
 
-  // Productos más vendidos (sumando cantidades de todas las órdenes).
   const conteo = new Map<string, number>();
-  for (const o of ordenesValidas) {
+  for (const o of validas) {
     for (const linea of o.items) {
       conteo.set(linea.productoId, (conteo.get(linea.productoId) ?? 0) + linea.cantidad);
     }
   }
   const productosMasVendidos = Array.from(conteo, ([id, cantidad]) => {
     const producto = productos.find((p) => p.id === id);
-    return { producto: producto!, cantidad };
+    return { producto: { id, nombre: producto?.nombre ?? "" }, cantidad };
   }).sort((a, b) => b.cantidad - a.cantidad);
 
-  // Cuenta de alertas de stock.
-  const alertasStock = productos.filter((p) => p.stockTotal <= p.umbralStock).length;
-
-  return simularLatencia({
+  return {
     ventasTotales,
     numeroOrdenes,
     ticketPromedio,
     clientesRegistrados: usuarios.filter((u) => u.rol === "cliente").length,
     productosActivos: productos.length,
-    alertasStock,
+    alertasStock: productos.filter((p) => p.stockTotal <= p.umbralStock).length,
     ingresosPorMes,
     ventasPorMetodoPago,
     productosMasVendidos,
-  });
+  };
 }

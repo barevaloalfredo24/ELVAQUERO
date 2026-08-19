@@ -1,0 +1,28 @@
+# =====================================================================
+# DOCKER COMPOSE - PostgreSQL local para desarrollo
+# ---------------------------------------------------------------------
+# Levanta una base de datos PostgreSQL con las credenciales usadas en
+# backend/.env. Ejecutar con:  docker compose up -d
+# =====================================================================
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: elvaquero-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: elvaquero
+      POSTGRES_PASSWORD: elvaquero
+      POSTGRES_DB: elvaquero
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U elvaquero -d elvaquero"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

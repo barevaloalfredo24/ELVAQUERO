@@ -5,7 +5,7 @@
 // el panel de pedidos y las estadísticas del administrador.
 // =====================================================================
 
-import type { Orden } from "@/lib/tipos";
+import type { Orden } from "../tipos";
 
 export const ordenes: Orden[] = [
   {
@@ -18,6 +18,7 @@ export const ordenes: Orden[] = [
       { productoId: "p-cinturon-toro", nombre: "Cinturón de Cuero Toro", variante: "Talla 36 · Café", cantidad: 1, precioUnitario: 280, subtotal: 280 },
     ],
     subtotal: 1530,
+    descuento: 0,
     envio: 40,
     total: 1570,
     metodoPago: "tarjeta",
@@ -35,6 +36,7 @@ export const ordenes: Orden[] = [
       { productoId: "p-sombrero-ranchero", nombre: "Sombrero de Fieltro Ranchero", variante: "Talla 58 · Negro", cantidad: 1, precioUnitario: 450, subtotal: 450 },
     ],
     subtotal: 450,
+    descuento: 0,
     envio: 35,
     total: 485,
     metodoPago: "contra_entrega",
@@ -53,6 +55,7 @@ export const ordenes: Orden[] = [
       { productoId: "p-camisa-western", nombre: "Camisa Denim Western", variante: "Talla M · Azul", cantidad: 1, precioUnitario: 280, subtotal: 280 },
     ],
     subtotal: 1120,
+    descuento: 0,
     envio: 45,
     total: 1165,
     metodoPago: "tarjeta",
@@ -70,6 +73,7 @@ export const ordenes: Orden[] = [
       { productoId: "p-hebilla-estrella", nombre: "Hebilla de Acero Estrella", variante: "Talla Única · Plata", cantidad: 3, precioUnitario: 150, subtotal: 450 },
     ],
     subtotal: 450,
+    descuento: 0,
     envio: 30,
     total: 480,
     metodoPago: "tarjeta",
@@ -87,6 +91,7 @@ export const ordenes: Orden[] = [
       { productoId: "p-bota-avestruz", nombre: "Bota de Avestruz Premium", variante: "Talla 41 · Cognac", cantidad: 1, precioUnitario: 2400, subtotal: 2400 },
     ],
     subtotal: 2400,
+    descuento: 0,
     envio: 50,
     total: 2450,
     metodoPago: "contra_entrega",
@@ -104,6 +109,7 @@ export const ordenes: Orden[] = [
       { productoId: "p-panuelo-norteno", nombre: "Pañuelo de Seda Norteño", variante: "Talla Única · Rojo", cantidad: 2, precioUnitario: 90, subtotal: 180 },
     ],
     subtotal: 180,
+    descuento: 0,
     envio: 25,
     total: 205,
     metodoPago: "tarjeta",

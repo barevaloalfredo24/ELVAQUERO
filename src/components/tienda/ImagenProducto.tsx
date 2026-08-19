@@ -1,28 +1,39 @@
 // =====================================================================
-// IMAGEN DE PRODUCTO (marcador de posición)
+// IMAGEN DE PRODUCTO
 // ---------------------------------------------------------------------
-// Mientras no exista backend con imágenes reales (Cloudinary / S3),
-// este componente pinta un bloque de color con el emoji de la categoría.
-// Cuando lleguen las URLs, bastará sustituir este <div> por un
-// <Image src={producto.imagenes[0]} ... /> sin tocar el resto del layout.
+// Si el producto tiene imágenes (Cloudinary), muestra la primera. Si no,
+// pinta un bloque de color con el emoji de su categoría como respaldo.
 // =====================================================================
 
 import type { Producto } from "@/lib/tipos";
-import { categoriaDe } from "@/lib/servicios/catalogo";
+import { emojiCategoria } from "@/lib/emoji";
 
-// Gradiente de color asociado a cada categoría para dar variedad visual.
+// Gradiente de color asociado a cada categoría (por slug), para el fallback.
 const gradientes: Record<string, string> = {
-  "cat-botas": "from-marron-600 to-marron-900",
-  "cat-sombreros": "from-amber-500 to-marron-700",
-  "cat-cinturones": "from-stone-500 to-marron-800",
-  "cat-camisas": "from-marron-400 to-marron-700",
-  "cat-pantalones": "from-blue-900 to-slate-700",
-  "cat-accesorios": "from-dorado to-marron-600",
+  botas: "from-marron-600 to-marron-900",
+  sombreros: "from-amber-500 to-marron-700",
+  cinturones: "from-stone-500 to-marron-800",
+  camisas: "from-marron-400 to-marron-700",
+  pantalones: "from-blue-900 to-slate-700",
+  accesorios: "from-dorado to-marron-600",
 };
 
 export function ImagenProducto({ producto }: { producto: Producto }) {
-  const categoria = categoriaDe(producto);
-  const gradiente = gradientes[producto.categoriaId] ?? "from-marron-500 to-marron-800";
+  const url = producto.imagenes?.[0]?.url;
+
+  // Si hay imagen real, se muestra (Cloudinary la sirve optimizada vía CDN).
+  if (url) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt={producto.nombre}
+        className="aspect-[4/3] w-full object-cover"
+      />
+    );
+  }
+
+  const gradiente = gradientes[producto.categoriaSlug ?? ""] ?? "from-marron-500 to-marron-800";
 
   return (
     <div
@@ -30,10 +41,10 @@ export function ImagenProducto({ producto }: { producto: Producto }) {
       role="img"
       aria-label={producto.nombre}
     >
-      {/* Textura sutil de líneas para dar profundidad. */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.15),transparent_50%)]" />
-      {/* Emoji representativo de la categoría. */}
-      <span className="text-6xl drop-shadow-lg sm:text-7xl">{categoria?.icono ?? "🧺"}</span>
+      <span className="text-6xl drop-shadow-lg sm:text-7xl">
+        {emojiCategoria(producto.categoriaSlug)}
+      </span>
     </div>
   );
 }

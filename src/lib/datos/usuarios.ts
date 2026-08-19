@@ -6,7 +6,7 @@
 // para poder probar los filtros del panel de clientes.
 // =====================================================================
 
-import type { Usuario } from "@/lib/tipos";
+import type { Usuario } from "../tipos";
 
 export const usuarios: Usuario[] = [
   {

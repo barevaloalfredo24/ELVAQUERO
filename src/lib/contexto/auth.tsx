@@ -1,10 +1,9 @@
 // =====================================================================
-// CONTEXTO DE AUTENTICACIÓN (SIMULADO)
+// CONTEXTO DE AUTENTICACIÓN
 // ---------------------------------------------------------------------
-// Gestiona la sesión del usuario en el cliente. Es una implementación
-// temporal: cuando exista backend se sustituirá por Auth0 / Firebase /
-// NextAuth. La sesión se persiste en localStorage para no perderla al
-// recargar.
+// Conecta con la API NestJS (registro/login con JWT). Si la API no está
+// disponible, usa un respaldo local (mock) para no bloquear la demo.
+// La sesión y el token se persisten en localStorage.
 // =====================================================================
 
 "use client";
@@ -12,9 +11,11 @@
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { usuarios } from "@/lib/datos";
 import { useAlmacenLocal } from "@/lib/hooks/use-almacen-local";
+import { API_URL } from "@/lib/api";
 import type { Usuario } from "@/lib/tipos";
 
-const CLAVE_STORAGE = "elvaquero-usuario";
+const CLAVE_USUARIO = "elvaquero-usuario";
+const CLAVE_TOKEN = "elvaquero-token";
 
 // Resultado de una operación de autenticación (éxito o error con mensaje).
 export interface ResultadoAuth {
@@ -24,6 +25,7 @@ export interface ResultadoAuth {
 
 interface AuthContexto {
   usuario: Usuario | null;
+  token: string | null;
   autenticado: boolean;
   esAdmin: boolean;
   iniciarSesion: (email: string, password: string) => Promise<ResultadoAuth>;
@@ -33,17 +35,48 @@ interface AuthContexto {
 
 const ContextoAuth = createContext<AuthContexto | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Sesión persistida en localStorage (null = sin sesión).
-  const [usuario, setUsuario] = useAlmacenLocal<Usuario | null>(CLAVE_STORAGE, null);
+// Llama a un endpoint de auth y devuelve { ok, data, status }.
+async function llamarAuth(
+  ruta: string,
+  body: Record<string, string>,
+): Promise<{ ok: boolean; data?: { token: string; usuario: Usuario }; status: number }> {
+  if (!API_URL) return { ok: false, status: 0 };
+  try {
+    const res = await fetch(`${API_URL}${ruta}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => null);
+    return { ok: res.ok, data, status: res.status };
+  } catch {
+    return { ok: false, status: 0 };
+  }
+}
 
-  // Inicia sesión. En este mock no se valida la contraseña; si el correo
-  // coincide con un usuario de prueba se usa ese, si no se crea uno nuevo.
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Sesión y token persistidos en localStorage.
+  const [usuario, setUsuario] = useAlmacenLocal<Usuario | null>(CLAVE_USUARIO, null);
+  const [token, setToken] = useAlmacenLocal<string | null>(CLAVE_TOKEN, null);
+
+  // Inicia sesión (API primero, mock como respaldo).
   const iniciarSesion = useCallback(
-    async (email: string): Promise<ResultadoAuth> => {
+    async (email: string, password: string): Promise<ResultadoAuth> => {
       const normalizado = email.trim().toLowerCase();
       if (!normalizado) return { ok: false, mensaje: "Ingresa tu correo electrónico." };
 
+      const resultado = await llamarAuth("/api/auth/login", { email: normalizado, password });
+      if (resultado.ok && resultado.data) {
+        setUsuario(resultado.data.usuario);
+        setToken(resultado.data.token);
+        return { ok: true };
+      }
+      // Si el backend respondió con credenciales inválidas.
+      if (resultado.status === 401) {
+        return { ok: false, mensaje: "Credenciales inválidas." };
+      }
+
+      // --- Respaldo mock (sin backend disponible) ---
       const existente = usuarios.find((u) => u.email.toLowerCase() === normalizado);
       const sesion: Usuario = existente ?? {
         id: `u-${Date.now()}`,
@@ -55,12 +88,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fechaRegistro: new Date().toISOString(),
       };
       setUsuario(sesion);
+      setToken(null);
       return { ok: true };
     },
-    [setUsuario],
+    [setUsuario, setToken],
   );
 
-  // Registra un nuevo cliente (queda como NO verificado hasta confirmar correo).
+  // Registra un cliente (API primero, mock como respaldo).
   const registrar = useCallback(
     async (datos: { nombre: string; email: string; password: string }): Promise<ResultadoAuth> => {
       const email = datos.email.trim().toLowerCase();
@@ -69,10 +103,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!datos.password || datos.password.length < 6) {
         return { ok: false, mensaje: "La contraseña debe tener al menos 6 caracteres." };
       }
-      if (usuarios.some((u) => u.email.toLowerCase() === email)) {
+
+      const resultado = await llamarAuth("/api/auth/registro", {
+        nombre: datos.nombre,
+        email,
+        password: datos.password,
+      });
+      if (resultado.ok && resultado.data) {
+        setUsuario(resultado.data.usuario);
+        setToken(resultado.data.token);
+        return { ok: true };
+      }
+      if (resultado.status === 409) {
         return { ok: false, mensaje: "Ya existe una cuenta con ese correo." };
       }
 
+      // --- Respaldo mock ---
+      if (usuarios.some((u) => u.email.toLowerCase() === email)) {
+        return { ok: false, mensaje: "Ya existe una cuenta con ese correo." };
+      }
       const nuevo: Usuario = {
         id: `u-${Date.now()}`,
         nombre: datos.nombre.trim(),
@@ -83,23 +132,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fechaRegistro: new Date().toISOString(),
       };
       setUsuario(nuevo);
+      setToken(null);
       return { ok: true };
     },
-    [setUsuario],
+    [setUsuario, setToken],
   );
 
-  const cerrarSesion = useCallback(() => setUsuario(null), [setUsuario]);
+  const cerrarSesion = useCallback(() => {
+    setUsuario(null);
+    setToken(null);
+  }, [setUsuario, setToken]);
 
   const valor = useMemo(
     () => ({
       usuario,
+      token,
       autenticado: usuario !== null,
       esAdmin: usuario?.rol === "admin",
       iniciarSesion,
       registrar,
       cerrarSesion,
     }),
-    [usuario, iniciarSesion, registrar, cerrarSesion],
+    [usuario, token, iniciarSesion, registrar, cerrarSesion],
   );
 
   return <ContextoAuth.Provider value={valor}>{children}</ContextoAuth.Provider>;

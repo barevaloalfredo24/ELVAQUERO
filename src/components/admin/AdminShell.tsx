@@ -9,24 +9,36 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/lib/contexto/auth";
 
 // Elementos del menú de administración.
 const ENLACES = [
   { href: "/admin", etiqueta: "Dashboard", icono: "📊" },
   { href: "/admin/productos", etiqueta: "Productos", icono: "👢" },
+  { href: "/admin/categorias", etiqueta: "Categorías", icono: "🏷️" },
+  { href: "/admin/cupones", etiqueta: "Cupones", icono: "🎟️" },
   { href: "/admin/pedidos", etiqueta: "Pedidos", icono: "📦" },
   { href: "/admin/clientes", etiqueta: "Clientes", icono: "👥" },
+  { href: "/admin/staff", etiqueta: "Staff", icono: "🧑‍💼" },
   { href: "/admin/inventario", etiqueta: "Inventario", icono: "⚠️" },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { usuario, cerrarSesion } = useAuth();
   const [abierto, setAbierto] = useState(false);
 
   // Marca como activo el enlace que coincide con la ruta actual.
   const esActivo = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
+
+  // Cierra la sesión y vuelve a la tienda.
+  function salir() {
+    cerrarSesion();
+    router.push("/");
+  }
 
   return (
     <div className="flex min-h-screen">
@@ -67,7 +79,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             ))}
           </nav>
 
-          {/* Enlace para volver a la tienda. */}
+          {/* Enlace para volver a la tienda y cerrar sesión. */}
           <div className="border-t border-marron-800 px-3 py-4">
             <Link
               href="/"
@@ -75,6 +87,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             >
               <span>🏠</span> Ver tienda
             </Link>
+            {usuario && (
+              <button
+                type="button"
+                onClick={salir}
+                className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-marron-300 hover:bg-marron-900 hover:text-white"
+              >
+                <span>🚪</span> Cerrar sesión
+              </button>
+            )}
           </div>
         </div>
       </aside>
@@ -104,6 +125,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <h1 className="font-display text-lg font-bold text-marron-900">
             {ENLACES.find((e) => esActivo(e.href))?.etiqueta ?? "Panel"}
           </h1>
+          {/* Usuario conectado. */}
+          {usuario && (
+            <div className="ml-auto flex items-center gap-2 text-sm text-marron-600">
+              <span className="hidden sm:inline">{usuario.nombre}</span>
+              <span className="rounded-full bg-marron-100 px-2.5 py-1 text-xs font-medium uppercase text-marron-700">
+                {usuario.rol}
+              </span>
+            </div>
+          )}
         </header>
 
         {/* Contenido de cada página del panel. */}

@@ -16,14 +16,15 @@ import Link from "next/link";
 import { useAuth } from "@/lib/contexto/auth";
 import { useCarrito } from "@/lib/contexto/carrito";
 import { formatearPrecio } from "@/lib/util";
-import type { MetodoPago, Orden } from "@/lib/tipos";
+import { API_URL } from "@/lib/api";
+import type { Cupon, MetodoPago, Orden } from "@/lib/tipos";
 
 const ENVIO = 45;
 const UMBRAL_ENVIO_GRATIS = 500;
 const CLAVE_ORDENES = "elvaquero-ordenes";
 
 export default function PaginaCheckout() {
-  const { usuario, autenticado } = useAuth();
+  const { usuario, token, autenticado } = useAuth();
   const { lineas, subtotal, vaciar } = useCarrito();
   const router = useRouter();
 
@@ -33,9 +34,17 @@ export default function PaginaCheckout() {
   const [telefono, setTelefono] = useState(usuario?.telefono ?? "");
   const [direccion, setDireccion] = useState(usuario?.direccion ?? "");
   const [error, setError] = useState("");
+  const [enviando, setEnviando] = useState(false);
+
+  // Estado del cupón.
+  const [cuponCodigo, setCuponCodigo] = useState("");
+  const [cuponAplicado, setCuponAplicado] = useState<Cupon | null>(null);
+  const [descuento, setDescuento] = useState(0);
+  const [cuponError, setCuponError] = useState("");
+  const [aplicandoCupon, setAplicandoCupon] = useState(false);
 
   const envio = subtotal >= UMBRAL_ENVIO_GRATIS ? 0 : ENVIO;
-  const total = subtotal + envio;
+  const total = subtotal - descuento + envio;
 
   // -------- GATE: requiere sesión iniciada --------
   if (!autenticado) {
@@ -71,8 +80,43 @@ export default function PaginaCheckout() {
     );
   }
 
+  // -------- Valida y aplica el cupón --------
+  async function aplicarCupon() {
+    if (!cuponCodigo.trim()) return;
+    setCuponError("");
+    setAplicandoCupon(true);
+    try {
+      const res = await fetch(`${API_URL}/api/catalogo/cupones/validar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo: cuponCodigo.trim(), subtotal }),
+      });
+      const data = await res.json();
+      if (data.valido) {
+        setCuponAplicado(data.cupon);
+        setDescuento(data.descuento);
+      } else {
+        setCuponAplicado(null);
+        setDescuento(0);
+        setCuponError(data.mensaje ?? "Cupón no válido.");
+      }
+    } catch {
+      setCuponError("No se pudo validar el cupón.");
+    } finally {
+      setAplicandoCupon(false);
+    }
+  }
+
+  // Quita el cupón aplicado.
+  function quitarCupon() {
+    setCuponCodigo("");
+    setCuponAplicado(null);
+    setDescuento(0);
+    setCuponError("");
+  }
+
   // -------- Genera la orden y redirige a la confirmación --------
-  function confirmarPedido(evento: React.FormEvent<HTMLFormElement>) {
+  async function confirmarPedido(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
 
     // Validación básica de campos de envío.
@@ -80,9 +124,63 @@ export default function PaginaCheckout() {
       setError("Completa todos los campos de envío para continuar.");
       return;
     }
+    setError("");
+    setEnviando(true);
 
-    // Construye la orden con un "snapshot" de las líneas del carrito.
-    const orden: Orden = {
+    try {
+      // 1) Intenta crear la orden en el backend (requiere token JWT).
+      if (token) {
+        const creada = await crearOrdenEnApi();
+        if (creada) {
+          guardarOrdenLocal(creada);
+          vaciar();
+          router.push(`/gracias?orden=${creada.id}`);
+          return;
+        }
+      }
+
+      // 2) Respaldo local (si no hay backend o no hay token).
+      const orden = construirOrdenLocal();
+      guardarOrdenLocal(orden);
+      vaciar();
+      router.push(`/gracias?orden=${orden.id}`);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  // Crea la orden en el backend vía POST /api/ordenes.
+  async function crearOrdenEnApi(): Promise<Orden | null> {
+    if (!token) return null;
+    try {
+      const res = await fetch(`${API_URL}/api/ordenes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          items: lineas.map((l) => ({ varianteId: l.varianteId, cantidad: l.cantidad })),
+          metodoPago,
+          direccionEnvio: direccion.trim(),
+          telefono: telefono.trim(),
+          cuponCodigo: cuponAplicado?.codigo ?? undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.message ?? "No se pudo crear el pedido.");
+        return null;
+      }
+      return (await res.json()) as Orden;
+    } catch {
+      return null;
+    }
+  }
+
+  // Construye una orden local (snapshot) como respaldo.
+  function construirOrdenLocal(): Orden {
+    return {
       id: `ORD-${Date.now()}`,
       clienteId: usuario!.id,
       clienteNombre: nombre.trim(),
@@ -96,17 +194,19 @@ export default function PaginaCheckout() {
         subtotal: l.precioUnitario * l.cantidad,
       })),
       subtotal,
+      descuento,
       envio,
       total,
       metodoPago,
-      // Si es contra entrega, el estado inicial es "pago_pendiente".
       estado: metodoPago === "tarjeta" ? "pendiente" : "pago_pendiente",
       direccionEnvio: direccion.trim(),
       telefono: telefono.trim(),
       fecha: new Date().toISOString(),
     };
+  }
 
-    // Persiste la orden en localStorage (historial local del usuario).
+  // Guarda la orden en el historial local (para "gracias" y "mi cuenta").
+  function guardarOrdenLocal(orden: Orden) {
     try {
       const guardadas: Orden[] = JSON.parse(localStorage.getItem(CLAVE_ORDENES) ?? "[]");
       guardadas.unshift(orden);
@@ -114,10 +214,6 @@ export default function PaginaCheckout() {
     } catch {
       // Si falla el almacenamiento, se continúa igualmente.
     }
-
-    // Limpia el carrito y navega a la confirmación.
-    vaciar();
-    router.push(`/gracias?orden=${orden.id}`);
   }
 
   return (
@@ -248,11 +344,58 @@ export default function PaginaCheckout() {
                 </li>
               ))}
             </ul>
+            {/* Cupón de descuento. */}
+            <div className="border-b border-marron-100 pb-3">
+              {cuponAplicado ? (
+                <div className="flex items-center justify-between rounded-lg bg-green-50 px-3 py-2 text-sm">
+                  <span className="font-medium text-green-800">
+                    🎟️ {cuponAplicado.codigo} aplicado
+                  </span>
+                  <button
+                    type="button"
+                    onClick={quitarCupon}
+                    className="text-xs font-medium text-red-600 hover:underline"
+                  >
+                    Quitar
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={cuponCodigo}
+                      onChange={(e) => setCuponCodigo(e.target.value.toUpperCase())}
+                      placeholder="Código de cupón"
+                      className="w-full rounded-lg border border-marron-200 px-3 py-2 text-sm uppercase outline-none focus:border-marron-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={aplicarCupon}
+                      disabled={aplicandoCupon}
+                      className="shrink-0 rounded-lg bg-marron-100 px-4 py-2 text-sm font-semibold text-marron-700 hover:bg-marron-200 disabled:opacity-60"
+                    >
+                      {aplicandoCupon ? "…" : "Aplicar"}
+                    </button>
+                  </div>
+                  {cuponError && (
+                    <p className="mt-1 text-xs font-medium text-red-600">{cuponError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-marron-500">Subtotal</span>
                 <span>{formatearPrecio(subtotal)}</span>
               </div>
+              {descuento > 0 && (
+                <div className="flex justify-between font-medium text-green-700">
+                  <span>Descuento</span>
+                  <span>−{formatearPrecio(descuento)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-marron-500">Envío</span>
                 <span>{envio === 0 ? "Gratis" : formatearPrecio(envio)}</span>
@@ -265,9 +408,14 @@ export default function PaginaCheckout() {
 
             <button
               type="submit"
-              className="w-full rounded-full bg-marron-700 py-3 font-semibold text-white transition hover:bg-marron-800"
+              disabled={enviando}
+              className="w-full rounded-full bg-marron-700 py-3 font-semibold text-white transition hover:bg-marron-800 disabled:opacity-60"
             >
-              {metodoPago === "tarjeta" ? "Pagar con tarjeta" : "Confirmar pedido"}
+              {enviando
+                ? "Procesando…"
+                : metodoPago === "tarjeta"
+                  ? "Pagar con tarjeta"
+                  : "Confirmar pedido"}
             </button>
           </div>
         </aside>

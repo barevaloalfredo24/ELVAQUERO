@@ -5,7 +5,7 @@
 // Cuando exista backend, serán reemplazados por llamadas a la API.
 // =====================================================================
 
-import type { Categoria } from "@/lib/tipos";
+import type { Categoria } from "../tipos";
 
 export const categorias: Categoria[] = [
   {

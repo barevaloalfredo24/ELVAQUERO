@@ -8,12 +8,9 @@
 import Link from "next/link";
 import type { Producto } from "@/lib/tipos";
 import { formatearPrecio } from "@/lib/util";
-import { categoriaDe } from "@/lib/servicios/catalogo";
 import { ImagenProducto } from "./ImagenProducto";
 
 export function TarjetaProducto({ producto }: { producto: Producto }) {
-  const categoria = categoriaDe(producto);
-
   return (
     <Link
       href={`/producto/${producto.id}`}
@@ -33,7 +30,7 @@ export function TarjetaProducto({ producto }: { producto: Producto }) {
       <div className="flex flex-1 flex-col gap-1 p-4">
         {/* Categoría. */}
         <span className="text-xs font-medium uppercase tracking-wide text-marron-500">
-          {categoria?.nombre}
+          {producto.categoriaNombre}
         </span>
         {/* Nombre. */}
         <h3 className="font-medium text-marron-900 group-hover:text-marron-600">
