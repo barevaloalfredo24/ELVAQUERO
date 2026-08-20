@@ -135,19 +135,21 @@ export function Header() {
             </Link>
           )}
 
-          {/* Enlace al carrito con contador. */}
-          <Link
-            href="/carrito"
-            className="relative flex items-center gap-1 rounded-md p-1.5 text-marron-800 hover:bg-marron-100"
-            title="Carrito"
-          >
-            <IconoCarrito />
-            {cantidadTotal > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-dorado px-1 text-xs font-bold text-white">
-                {cantidadTotal}
-              </span>
-            )}
-          </Link>
+          {/* Enlace al carrito con contador (oculto para staff). */}
+          {!esStaff && (
+            <Link
+              href="/carrito"
+              className="relative flex items-center gap-1 rounded-md p-1.5 text-marron-800 hover:bg-marron-100"
+              title="Carrito"
+            >
+              <IconoCarrito />
+              {cantidadTotal > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-dorado px-1 text-xs font-bold text-white">
+                  {cantidadTotal}
+                </span>
+              )}
+            </Link>
+          )}
         </div>
       </div>
 

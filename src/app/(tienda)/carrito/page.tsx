@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 import { useCarrito } from "@/lib/contexto/carrito";
+import { useAuth } from "@/lib/contexto/auth";
 import { formatearPrecio } from "@/lib/util";
 
 // Costo fijo de envío y umbral de envío gratis.
@@ -17,6 +18,28 @@ const UMBRAL_ENVIO_GRATIS = 500;
 
 export default function PaginaCarrito() {
   const { lineas, cantidadTotal, subtotal, actualizarCantidad, eliminar, vaciar } = useCarrito();
+  const { esStaff } = useAuth();
+
+  // El staff no puede usar el carrito (no realiza pedidos).
+  if (esStaff) {
+    return (
+      <div className="contenedor flex flex-col items-center gap-4 py-20 text-center">
+        <span className="text-6xl">🚫</span>
+        <h1 className="font-display text-2xl font-bold text-marron-900">
+          No tienes acceso al carrito
+        </h1>
+        <p className="max-w-md text-marron-500">
+          Tu cuenta es de staff y solo tiene acceso a la gestión de productos.
+        </p>
+        <Link
+          href="/admin/productos"
+          className="mt-2 rounded-full bg-marron-700 px-6 py-3 font-semibold text-white transition hover:bg-marron-800"
+        >
+          Ir al panel de administración
+        </Link>
+      </div>
+    );
+  }
 
   // Calcula el costo de envío según el umbral.
   const envio = subtotal === 0 || subtotal >= UMBRAL_ENVIO_GRATIS ? 0 : ENVIO;

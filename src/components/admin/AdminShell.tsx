@@ -3,7 +3,9 @@
 // ---------------------------------------------------------------------
 // Componente cliente que dibuja el "esqueleto" del panel admin: barra
 // lateral de navegación (fija en escritorio, tipo cajón en móvil) y
-// encabezado superior con botón de menú para pantallas pequeñas.
+// encabezado superior. El menú se filtra según el rol del usuario:
+//   - admin: acceso total
+//   - staff: solo Productos, Pedidos, Clientes e Inventario
 // =====================================================================
 
 "use client";
@@ -13,17 +15,25 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/contexto/auth";
 
-// Elementos del menú de administración.
+// Elementos del menú de administración con los roles que pueden verlos.
 const ENLACES = [
-  { href: "/admin", etiqueta: "Dashboard", icono: "📊" },
-  { href: "/admin/reportes", etiqueta: "Reportes", icono: "📈" },
-  { href: "/admin/productos", etiqueta: "Productos", icono: "👢" },
-  { href: "/admin/categorias", etiqueta: "Categorías", icono: "🏷️" },
-  { href: "/admin/cupones", etiqueta: "Cupones", icono: "🎟️" },
-  { href: "/admin/pedidos", etiqueta: "Pedidos", icono: "📦" },
-  { href: "/admin/clientes", etiqueta: "Clientes", icono: "👥" },
-  { href: "/admin/staff", etiqueta: "Staff", icono: "🧑‍💼" },
-  { href: "/admin/inventario", etiqueta: "Inventario", icono: "⚠️" },
+  { href: "/admin", etiqueta: "Dashboard", icono: "📊", roles: ["admin"] },
+  { href: "/admin/reportes", etiqueta: "Reportes", icono: "📈", roles: ["admin"] },
+  { href: "/admin/productos", etiqueta: "Productos", icono: "👢", roles: ["admin", "staff"] },
+  { href: "/admin/categorias", etiqueta: "Categorías", icono: "🏷️", roles: ["admin"] },
+  { href: "/admin/cupones", etiqueta: "Cupones", icono: "🎟️", roles: ["admin"] },
+  { href: "/admin/pedidos", etiqueta: "Pedidos", icono: "📦", roles: ["admin", "staff"] },
+  { href: "/admin/clientes", etiqueta: "Clientes", icono: "👥", roles: ["admin", "staff"] },
+  { href: "/admin/staff", etiqueta: "Staff", icono: "🧑‍💼", roles: ["admin"] },
+  { href: "/admin/inventario", etiqueta: "Inventario", icono: "⚠️", roles: ["admin", "staff"] },
+];
+
+// Rutas permitidas para el rol staff.
+const RUTAS_STAFF = [
+  "/admin/productos",
+  "/admin/pedidos",
+  "/admin/clientes",
+  "/admin/inventario",
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -32,8 +42,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const { usuario, cerrarSesion } = useAuth();
   const [abierto, setAbierto] = useState(false);
 
+  const rol = usuario?.rol ?? "";
+  const esStaff = rol === "staff";
+
+  // Enlaces visibles según el rol.
+  const enlacesVisibles = ENLACES.filter((e) => e.roles.includes(rol));
+
   // Marca como activo el enlace que coincide con la ruta actual.
-  const esActivo = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href));
+  const esActivo = (href: string) =>
+    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+
+  // El staff no puede acceder a rutas fuera de sus permisos.
+  const accesoDenegado = esStaff && !RUTAS_STAFF.some((r) => pathname.startsWith(r));
 
   // Cierra la sesión y vuelve a la tienda.
   function salir() {
@@ -61,9 +81,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Navegación. */}
+          {/* Navegación (filtrada por rol). */}
           <nav className="flex-1 space-y-1 px-3 py-4">
-            {ENLACES.map((e) => (
+            {enlacesVisibles.map((e) => (
               <Link
                 key={e.href}
                 href={e.href}
@@ -124,7 +144,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </svg>
           </button>
           <h1 className="font-display text-lg font-bold text-marron-900">
-            {ENLACES.find((e) => esActivo(e.href))?.etiqueta ?? "Panel"}
+            {enlacesVisibles.find((e) => esActivo(e.href))?.etiqueta ?? "Panel"}
           </h1>
           {/* Usuario conectado. */}
           {usuario && (
@@ -137,8 +157,20 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           )}
         </header>
 
-        {/* Contenido de cada página del panel. */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        {/* Contenido de cada página del panel (o mensaje de sin permiso). */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          {accesoDenegado ? (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-marron-100 bg-white py-16 text-center">
+              <span className="text-5xl">🚫</span>
+              <p className="text-lg font-medium text-marron-800">No tienes acceso a esta sección.</p>
+              <p className="text-sm text-marron-500">
+                Tu rol de staff solo permite Productos, Pedidos, Clientes e Inventario.
+              </p>
+            </div>
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );

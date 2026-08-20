@@ -11,10 +11,12 @@
 import { useMemo, useState } from "react";
 import type { Producto } from "@/lib/tipos";
 import { useCarrito } from "@/lib/contexto/carrito";
+import { useAuth } from "@/lib/contexto/auth";
 import { formatearPrecio } from "@/lib/util";
 
 export function SelectorProducto({ producto }: { producto: Producto }) {
   const { agregar } = useCarrito();
+  const { esStaff } = useAuth();
 
   // Listas únicas de tallas y colores derivadas de las variantes.
   const tallas = useMemo(
@@ -118,37 +120,43 @@ export function SelectorProducto({ producto }: { producto: Producto }) {
         {agotado ? "Agotado" : `${variante.stock} disponibles`}
       </p>
 
-      {/* Cantidad + botón agregar. */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center rounded-lg border border-marron-200 bg-white">
+      {/* Cantidad + botón agregar (oculto para staff). */}
+      {esStaff ? (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          Los usuarios de staff no pueden agregar productos al carrito.
+        </p>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center rounded-lg border border-marron-200 bg-white">
+            <button
+              type="button"
+              onClick={() => setCantidad((n) => Math.max(1, n - 1))}
+              className="px-3 py-2 text-lg font-bold text-marron-600 hover:bg-marron-50"
+              aria-label="Disminuir cantidad"
+            >
+              −
+            </button>
+            <span className="w-8 text-center font-semibold">{cantidad}</span>
+            <button
+              type="button"
+              onClick={() => setCantidad((n) => Math.min(variante.stock, n + 1))}
+              className="px-3 py-2 text-lg font-bold text-marron-600 hover:bg-marron-50"
+              aria-label="Aumentar cantidad"
+            >
+              +
+            </button>
+          </div>
+
           <button
             type="button"
-            onClick={() => setCantidad((n) => Math.max(1, n - 1))}
-            className="px-3 py-2 text-lg font-bold text-marron-600 hover:bg-marron-50"
-            aria-label="Disminuir cantidad"
+            onClick={agregarAlCarrito}
+            disabled={agotado}
+            className="flex-1 rounded-full bg-marron-700 px-6 py-3 font-semibold text-white transition hover:bg-marron-800 disabled:cursor-not-allowed disabled:bg-marron-300"
           >
-            −
-          </button>
-          <span className="w-8 text-center font-semibold">{cantidad}</span>
-          <button
-            type="button"
-            onClick={() => setCantidad((n) => Math.min(variante.stock, n + 1))}
-            className="px-3 py-2 text-lg font-bold text-marron-600 hover:bg-marron-50"
-            aria-label="Aumentar cantidad"
-          >
-            +
+            Agregar al carrito · {formatearPrecio(variante.precio * cantidad)}
           </button>
         </div>
-
-        <button
-          type="button"
-          onClick={agregarAlCarrito}
-          disabled={agotado}
-          className="flex-1 rounded-full bg-marron-700 px-6 py-3 font-semibold text-white transition hover:bg-marron-800 disabled:cursor-not-allowed disabled:bg-marron-300"
-        >
-          Agregar al carrito · {formatearPrecio(variante.precio * cantidad)}
-        </button>
-      </div>
+      )}
 
       {/* Mensaje de confirmación. */}
       {mensaje && (
