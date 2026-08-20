@@ -3,9 +3,7 @@
 // ---------------------------------------------------------------------
 // Componente cliente. Regla de negocio: la compra SOLO está disponible
 // para usuarios autenticados. Permite elegir método de pago (tarjeta vía
-// Stripe -simulado- o pago contra entrega) y generar la orden.
-// La confirmación real del pago con tarjeta se hará por webhook en el
-// backend; aquí solo se simula el flujo.
+// Recurrente -embebido- o pago contra entrega) y generar la orden.
 // =====================================================================
 
 "use client";
@@ -17,6 +15,7 @@ import { useAuth } from "@/lib/contexto/auth";
 import { useCarrito } from "@/lib/contexto/carrito";
 import { formatearPrecio } from "@/lib/util";
 import { API_URL } from "@/lib/api";
+import { PagoRecurrente } from "@/components/tienda/PagoRecurrente";
 import type { Cupon, MetodoPago, Orden } from "@/lib/tipos";
 
 const ENVIO = 45;
@@ -24,7 +23,7 @@ const UMBRAL_ENVIO_GRATIS = 500;
 const CLAVE_ORDENES = "elvaquero-ordenes";
 
 export default function PaginaCheckout() {
-  const { usuario, token, autenticado } = useAuth();
+  const { usuario, token, autenticado, esStaff } = useAuth();
   const { lineas, subtotal, vaciar } = useCarrito();
   const router = useRouter();
 
@@ -43,8 +42,34 @@ export default function PaginaCheckout() {
   const [cuponError, setCuponError] = useState("");
   const [aplicandoCupon, setAplicandoCupon] = useState(false);
 
+  // Estado del pago con Recurrente (tarjeta).
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [ordenRecurrenteId, setOrdenRecurrenteId] = useState<string | null>(null);
+
   const envio = subtotal >= UMBRAL_ENVIO_GRATIS ? 0 : ENVIO;
   const total = subtotal - descuento + envio;
+
+  // -------- GATE: los usuarios de staff no pueden realizar pedidos --------
+  if (autenticado && esStaff) {
+    return (
+      <div className="contenedor flex flex-col items-center gap-4 py-20 text-center">
+        <span className="text-6xl">🚫</span>
+        <h1 className="font-display text-2xl font-bold text-marron-900">
+          No puedes realizar pedidos
+        </h1>
+        <p className="max-w-md text-marron-500">
+          Tu cuenta es de staff y solo tiene acceso a la gestión de productos. Ve al panel de
+          administración para gestionar el catálogo.
+        </p>
+        <Link
+          href="/admin/productos"
+          className="mt-2 rounded-full bg-marron-700 px-6 py-3 font-semibold text-white transition hover:bg-marron-800"
+        >
+          Ir al panel de administración
+        </Link>
+      </div>
+    );
+  }
 
   // -------- GATE: requiere sesión iniciada --------
   if (!autenticado) {
@@ -76,6 +101,26 @@ export default function PaginaCheckout() {
         <Link href="/catalogo" className="rounded-full bg-marron-700 px-6 py-3 font-semibold text-white">
           Ir al catálogo
         </Link>
+      </div>
+    );
+  }
+
+  // -------- VISTA DE PAGO EMBEBIDO (Recurrente) --------
+  if (checkoutUrl) {
+    return (
+      <div className="contenedor py-8">
+        <h1 className="mb-2 font-display text-2xl font-bold text-marron-900 sm:text-3xl">
+          Pago con tarjeta
+        </h1>
+        <p className="mb-6 text-sm text-marron-500">
+          Completa el pago de forma segura. Total a pagar:{" "}
+          <strong className="text-marron-900">{formatearPrecio(total)}</strong>
+        </p>
+        <PagoRecurrente
+          url={checkoutUrl}
+          onExito={manejarExitoRecurrente}
+          onFallo={manejarFalloRecurrente}
+        />
       </div>
     );
   }
@@ -128,7 +173,18 @@ export default function PaginaCheckout() {
     setEnviando(true);
 
     try {
-      // 1) Intenta crear la orden en el backend (requiere token JWT).
+      // Si elige tarjeta, inicia el checkout embebido de Recurrente.
+      if (metodoPago === "tarjeta") {
+        const resultado = await crearCheckoutRecurrente();
+        if (resultado) {
+          guardarOrdenLocal(resultado.orden);
+          setOrdenRecurrenteId(resultado.ordenId);
+          setCheckoutUrl(resultado.checkoutUrl);
+        }
+        return;
+      }
+
+      // Contra entrega: crea la orden directamente.
       if (token) {
         const creada = await crearOrdenEnApi();
         if (creada) {
@@ -139,7 +195,7 @@ export default function PaginaCheckout() {
         }
       }
 
-      // 2) Respaldo local (si no hay backend o no hay token).
+      // Respaldo local (sin backend o sin token).
       const orden = construirOrdenLocal();
       guardarOrdenLocal(orden);
       vaciar();
@@ -147,6 +203,59 @@ export default function PaginaCheckout() {
     } finally {
       setEnviando(false);
     }
+  }
+
+  // Crea la orden + el checkout de Recurrente y devuelve la URL a embebir.
+  async function crearCheckoutRecurrente(): Promise<{
+    ordenId: string;
+    checkoutUrl: string;
+    orden: Orden;
+  } | null> {
+    if (!token) return null;
+    try {
+      const res = await fetch(`${API_URL}/api/pagos/recurrente/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          items: lineas.map((l) => ({ varianteId: l.varianteId, cantidad: l.cantidad })),
+          metodoPago: "tarjeta",
+          direccionEnvio: direccion.trim(),
+          telefono: telefono.trim(),
+          cuponCodigo: cuponAplicado?.codigo ?? undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.message ?? "No se pudo iniciar el pago.");
+        return null;
+      }
+      return (await res.json()) as { ordenId: string; checkoutUrl: string; orden: Orden };
+    } catch {
+      setError("No se pudo iniciar el pago con Recurrente.");
+      return null;
+    }
+  }
+
+  // Al completarse el pago, confirma y redirige a la página de gracias.
+  async function manejarExitoRecurrente() {
+    if (ordenRecurrenteId && token) {
+      await fetch(`${API_URL}/api/pagos/recurrente/confirmar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ordenId: ordenRecurrenteId }),
+      }).catch(() => {});
+    }
+    vaciar();
+    router.push(`/gracias?orden=${ordenRecurrenteId}`);
+  }
+
+  // Si el pago falla, permite reintentar.
+  function manejarFalloRecurrente() {
+    setCheckoutUrl(null);
+    setError("El pago no se completó. Intenta de nuevo.");
   }
 
   // Crea la orden en el backend vía POST /api/ordenes.
@@ -291,7 +400,7 @@ export default function PaginaCheckout() {
                 </span>
               </button>
 
-              {/* Opción: tarjeta (Stripe). */}
+              {/* Opción: tarjeta (Recurrente). */}
               <button
                 type="button"
                 onClick={() => setMetodoPago("tarjeta")}
@@ -303,7 +412,7 @@ export default function PaginaCheckout() {
               >
                 <span className="text-2xl">💳</span>
                 <span>
-                  <span className="block font-semibold text-marron-900">Tarjeta (Stripe)</span>
+                  <span className="block font-semibold text-marron-900">Tarjeta (Recurrente)</span>
                   <span className="text-sm text-marron-500">
                     Pago seguro con tarjeta de crédito o débito.
                   </span>
@@ -314,7 +423,7 @@ export default function PaginaCheckout() {
             {/* Nota según el método elegido. */}
             {metodoPago === "tarjeta" ? (
               <p className="mt-3 text-sm text-marron-500">
-                Serás redirigido al checkout seguro de Stripe (simulado en esta fase).
+                Se abrirá el pago seguro de Recurrente en esta misma página.
               </p>
             ) : (
               <p className="mt-3 text-sm text-marron-500">

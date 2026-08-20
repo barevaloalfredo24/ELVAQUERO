@@ -12,6 +12,8 @@ import { CuponesGestionController } from './cupones.controller';
 import { CuponesGestionService } from './cupones.service';
 import { ProductosGestionController } from './productos.controller';
 import { ProductosGestionService } from './productos.service';
+import { PedidosGestionController } from './pedidos.controller';
+import { PedidosGestionService } from './pedidos.service';
 import { StaffController } from './staff.controller';
 import { StaffService } from './staff.service';
 
@@ -22,12 +24,14 @@ import { StaffService } from './staff.service';
     ProductosGestionController,
     CategoriasGestionController,
     CuponesGestionController,
+    PedidosGestionController,
   ],
   providers: [
     StaffService,
     ProductosGestionService,
     CategoriasGestionService,
     CuponesGestionService,
+    PedidosGestionService,
   ],
 })
 export class GestionModule {}

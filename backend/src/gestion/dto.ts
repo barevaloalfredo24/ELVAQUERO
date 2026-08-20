@@ -39,6 +39,19 @@ export class CrearStaffDto {
   telefono?: string;
 }
 
+// ------------------------- PEDIDOS / SEGUIMIENTO -------------------------
+
+// Datos para asignar un número de seguimiento a una orden.
+export class AsignarSeguimientoDto {
+  @IsString()
+  @IsNotEmpty({ message: 'El número de seguimiento es obligatorio.' })
+  numeroSeguimiento: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'La paquetería es obligatoria.' })
+  paqueteria: string;
+}
+
 // ------------------------- CUPONES -------------------------
 
 // Datos para crear un cupón.

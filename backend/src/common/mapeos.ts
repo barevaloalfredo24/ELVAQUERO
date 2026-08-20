@@ -30,3 +30,20 @@ export function mapearEstado(estado: string, metodoPago?: string): string {
       return 'pendiente';
   }
 }
+
+// Estado de pago: la BD usa 'exitoso', 'pendiente', etc. y el frontend
+// usa 'pagado', 'pendiente', 'fallido', 'reembolsado'.
+export function mapearEstadoPago(
+  estadoPago: string | null | undefined,
+): string {
+  switch (estadoPago) {
+    case 'exitoso':
+      return 'pagado';
+    case 'fallido':
+      return 'fallido';
+    case 'reembolsado':
+      return 'reembolsado';
+    default:
+      return 'pendiente';
+  }
+}

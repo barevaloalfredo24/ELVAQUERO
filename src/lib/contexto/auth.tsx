@@ -28,6 +28,7 @@ interface AuthContexto {
   token: string | null;
   autenticado: boolean;
   esAdmin: boolean;
+  esStaff: boolean;
   iniciarSesion: (email: string, password: string) => Promise<ResultadoAuth>;
   iniciarSesionGoogle: (credential: string) => Promise<ResultadoAuth>;
   registrar: (datos: { nombre: string; email: string; password: string }) => Promise<ResultadoAuth>;
@@ -164,6 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       autenticado: usuario !== null,
       esAdmin: usuario?.rol === "admin",
+      esStaff: usuario?.rol === "staff",
       iniciarSesion,
       iniciarSesionGoogle,
       registrar,

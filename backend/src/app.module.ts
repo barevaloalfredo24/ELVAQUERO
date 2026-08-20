@@ -15,6 +15,7 @@ import { GestionModule } from './gestion/gestion.module';
 import { ImagenesModule } from './imagenes/imagenes.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { MailModule } from './mail/mail.module';
+import { PagosModule } from './pagos/pagos.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { MailModule } from './mail/mail.module';
     GestionModule,
     ImagenesModule,
     ReportesModule,
+    PagosModule,
   ],
 })
 export class AppModule {}

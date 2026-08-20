@@ -13,5 +13,6 @@ import { OrdenesService } from './ordenes.service';
   imports: [AuthModule],
   controllers: [OrdenesController],
   providers: [OrdenesService],
+  exports: [OrdenesService],
 })
 export class OrdenesModule {}

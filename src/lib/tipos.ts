@@ -163,6 +163,9 @@ export interface Orden {
   total: number;
   metodoPago: MetodoPago;
   estado: EstadoOrden;
+  estadoPago?: string; // "pendiente" | "pagado" | "fallido" | "reembolsado"
+  numeroSeguimiento?: string | null;
+  paqueteria?: string | null;
   direccionEnvio: string;
   telefono: string;
   fecha: string; // ISO datetime

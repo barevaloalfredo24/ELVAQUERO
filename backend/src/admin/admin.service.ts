@@ -7,9 +7,10 @@
 
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import type { estado_orden } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CatalogoService, ProductoDTO } from '../catalogo/catalogo.service';
-import { mapearEstado } from '../common/mapeos';
+import { mapearEstado, mapearEstadoPago } from '../common/mapeos';
 import { UsuarioDTO } from '../auth/auth.service';
 
 export interface PuntoSerie {
@@ -44,6 +45,7 @@ type OrdenConDetalle = Prisma.ordenesGetPayload<{
       };
     };
     usuarios: true;
+    pagos: true;
     direcciones_ordenes_direccion_envio_idTodirecciones: true;
   };
 }>;
@@ -83,15 +85,21 @@ export class AdminService {
       total: Number(o.total),
       metodoPago: o.metodo_pago,
       estado: mapearEstado(o.estado, o.metodo_pago),
+      estadoPago: mapearEstadoPago(o.pagos[0]?.estado),
+      numeroSeguimiento: o.numero_seguimiento,
+      paqueteria: o.paqueteria,
       direccionEnvio: direccion ? direccion.calle : '',
       telefono: o.usuarios.telefono ?? '',
       fecha: o.fecha_creacion.toISOString(),
     };
   }
 
-  // Lista todos los pedidos (más recientes primero).
-  async listarPedidos() {
+  // Lista todos los pedidos (más recientes primero). Admite filtro por estado.
+  async listarPedidos(estado?: string) {
     const ordenes = await this.prisma.ordenes.findMany({
+      where: estado
+        ? { estado: { equals: estado as estado_orden } }
+        : undefined,
       orderBy: { fecha_creacion: 'desc' },
       include: {
         items_orden: {
@@ -102,6 +110,7 @@ export class AdminService {
           },
         },
         usuarios: true,
+        pagos: true,
         direcciones_ordenes_direccion_envio_idTodirecciones: true,
       },
     });

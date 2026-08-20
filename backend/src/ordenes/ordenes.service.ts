@@ -8,12 +8,13 @@
 
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { mapearEstado } from '../common/mapeos';
+import { mapearEstado, mapearEstadoPago } from '../common/mapeos';
 import { calcularDescuento, validarCupon } from '../common/cupones';
 import { CrearOrdenDto } from './dto';
 
@@ -38,6 +39,9 @@ export interface OrdenDTO {
   total: number;
   metodoPago: string;
   estado: string;
+  estadoPago: string;
+  numeroSeguimiento: string | null;
+  paqueteria: string | null;
   direccionEnvio: string;
   telefono: string;
   fecha: string;
@@ -56,6 +60,7 @@ type OrdenConDetalle = Prisma.ordenesGetPayload<{
       };
     };
     usuarios: true;
+    pagos: true;
     direcciones_ordenes_direccion_envio_idTodirecciones: true;
   };
 }>;
@@ -70,6 +75,11 @@ export class OrdenesService {
       where: { id: usuarioId },
     });
     if (!usuario) throw new UnauthorizedException('Usuario no válido.');
+
+    // El staff solo gestiona productos; no puede realizar pedidos.
+    if (usuario.rol === 'staff') {
+      throw new ForbiddenException('Los usuarios de staff no pueden realizar pedidos.');
+    }
 
     // Carga cada variante con su producto para validar stock y precios.
     const variantes = await Promise.all(
@@ -251,6 +261,9 @@ export class OrdenesService {
       total,
       metodoPago: dto.metodoPago,
       estado: mapearEstado('pendiente', dto.metodoPago),
+      estadoPago: 'pendiente',
+      numeroSeguimiento: null,
+      paqueteria: null,
       direccionEnvio: dto.direccionEnvio,
       telefono: dto.telefono,
       fecha: orden.fecha_creacion.toISOString(),
@@ -285,6 +298,9 @@ export class OrdenesService {
       total: Number(o.total),
       metodoPago: o.metodo_pago,
       estado: mapearEstado(o.estado, o.metodo_pago),
+      estadoPago: mapearEstadoPago(o.pagos[0]?.estado),
+      numeroSeguimiento: o.numero_seguimiento,
+      paqueteria: o.paqueteria,
       direccionEnvio: direccion ? direccion.calle : '',
       telefono: o.usuarios.telefono ?? '',
       fecha: o.fecha_creacion.toISOString(),
@@ -305,6 +321,7 @@ export class OrdenesService {
           },
         },
         usuarios: true,
+        pagos: true,
         direcciones_ordenes_direccion_envio_idTodirecciones: true,
       },
     });

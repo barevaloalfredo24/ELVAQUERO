@@ -1,23 +1,21 @@
 // =====================================================================
 // PÁGINA "MI CUENTA"
 // ---------------------------------------------------------------------
-// Componente cliente. Muestra los datos de la sesión, el estado de
-// verificación del correo y el historial local de pedidos del usuario
-// (guardado en localStorage durante esta fase de frontend).
+// Componente cliente. Muestra los datos de la sesión y el historial de
+// pedidos del usuario autenticado, leyendo SIEMPRE desde la API para
+// reflejar el estado real (pagado, enviado, seguimiento...).
 // =====================================================================
 
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/contexto/auth";
-import { useAlmacenLocal } from "@/lib/hooks/use-almacen-local";
+import { peticionAuth } from "@/lib/api";
 import { formatearFecha, formatearPrecio } from "@/lib/util";
 import type { Orden } from "@/lib/tipos";
 
-const CLAVE_ORDENES = "elvaquero-ordenes";
-const ORDENES_VACIAS: Orden[] = [];
-
-// Etiqueta amigable para cada estado de orden.
+// Etiqueta amigable para cada estado de la orden (envío).
 const ETIQUETAS_ESTADO: Record<string, string> = {
   pendiente: "Pendiente",
   pago_pendiente: "Pago contra entrega",
@@ -27,10 +25,44 @@ const ETIQUETAS_ESTADO: Record<string, string> = {
   cancelada: "Cancelada",
 };
 
+// Etiqueta y estilo del estado de pago.
+function InsigniaPago({ estadoPago }: { estadoPago?: string }) {
+  if (!estadoPago || estadoPago === "pendiente") return null;
+  const estilos: Record<string, string> = {
+    pagado: "bg-green-100 text-green-700",
+    fallido: "bg-red-100 text-red-700",
+    reembolsado: "bg-gray-200 text-gray-600",
+  };
+  const etiquetas: Record<string, string> = {
+    pagado: "Pagado",
+    fallido: "Pago fallido",
+    reembolsado: "Reembolsado",
+  };
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${estilos[estadoPago] ?? "bg-gray-100 text-gray-600"}`}>
+      {etiquetas[estadoPago] ?? estadoPago}
+    </span>
+  );
+}
+
 export default function PaginaCuenta() {
-  const { usuario, autenticado, cerrarSesion } = useAuth();
-  // Historial local de pedidos (persistido en localStorage).
-  const [ordenes] = useAlmacenLocal<Orden[]>(CLAVE_ORDENES, ORDENES_VACIAS);
+  const { usuario, autenticado, token, cerrarSesion } = useAuth();
+  const [ordenes, setOrdenes] = useState<Orden[]>([]);
+  const [cargando, setCargando] = useState(true);
+
+  // Carga SOLO los pedidos del usuario autenticado desde la API.
+  useEffect(() => {
+    if (!token) return;
+    let activo = true;
+    peticionAuth<Orden[]>("/api/ordenes/mis", token).then((res) => {
+      if (!activo) return;
+      if (res.ok && res.data) setOrdenes(res.data);
+      setCargando(false);
+    });
+    return () => {
+      activo = false;
+    };
+  }, [token]);
 
   if (!autenticado) {
     return (
@@ -85,7 +117,11 @@ export default function PaginaCuenta() {
       {/* Historial de pedidos. */}
       <section className="mt-8">
         <h2 className="mb-4 font-display text-xl font-bold text-marron-900">Mis pedidos</h2>
-        {ordenes.length === 0 ? (
+        {cargando ? (
+          <div className="rounded-xl border border-dashed border-marron-200 bg-white py-12 text-center text-marron-500">
+            Cargando tus pedidos…
+          </div>
+        ) : ordenes.length === 0 ? (
           <div className="rounded-xl border border-dashed border-marron-200 bg-white py-12 text-center">
             <p className="text-marron-500">Aún no has realizado ningún pedido.</p>
             <Link
@@ -104,22 +140,34 @@ export default function PaginaCuenta() {
                     <span className="font-semibold text-marron-900">{o.id}</span>
                     <span className="ml-2 text-sm text-marron-500">{formatearFecha(o.fecha)}</span>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                      o.estado === "cancelada"
-                        ? "bg-red-100 text-red-700"
-                        : o.estado === "entregada"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-blue-100 text-blue-700"
-                    }`}
-                  >
-                    {ETIQUETAS_ESTADO[o.estado] ?? o.estado}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Estado de pago. */}
+                    <InsigniaPago estadoPago={o.estadoPago} />
+                    {/* Estado de la orden (envío). */}
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        o.estado === "cancelada"
+                          ? "bg-red-100 text-red-700"
+                          : o.estado === "entregada"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-blue-100 text-blue-700"
+                      }`}
+                    >
+                      {ETIQUETAS_ESTADO[o.estado] ?? o.estado}
+                    </span>
+                  </div>
                 </div>
                 <p className="mt-2 text-sm text-marron-600">
                   {o.items.reduce((acc, l) => acc + l.cantidad, 0)} artículo(s) ·{" "}
                   {o.metodoPago === "tarjeta" ? "Tarjeta" : "Contra entrega"}
                 </p>
+                {/* Seguimiento del envío (si ya fue enviado). */}
+                {o.numeroSeguimiento && (
+                  <div className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                    🚚 En camino · Paquetería: <strong>{o.paqueteria}</strong> · Seguimiento:{" "}
+                    <strong>{o.numeroSeguimiento}</strong>
+                  </div>
+                )}
                 <p className="mt-1 text-right font-semibold text-marron-900">
                   Total: {formatearPrecio(o.total)}
                 </p>

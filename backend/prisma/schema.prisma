@@ -192,6 +192,8 @@ model ordenes {
   moneda                                                    String                    @default("GTQ") @db.Char(3)
   fecha_creacion                                            DateTime                  @default(now()) @db.Timestamptz(6)
   fecha_actualizacion                                       DateTime                  @default(now()) @db.Timestamptz(6)
+  numero_seguimiento                                        String?                   @db.VarChar(100)
+  paqueteria                                                String?                   @db.VarChar(100)
   historial_estados_orden                                   historial_estados_orden[]
   items_orden                                               items_orden[]
   cupones                                                   cupones?                  @relation(fields: [cupon_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -241,6 +243,7 @@ model productos {
 
   @@index([esta_activo], map: "idx_productos_activo")
   @@index([categoria_id], map: "idx_productos_categoria")
+  @@index([nombre(ops: raw("gin_trgm_ops"))], map: "idx_productos_nombre_trgm", type: Gin)
 }
 
 model redenciones_cupon {

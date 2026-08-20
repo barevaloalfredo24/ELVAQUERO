@@ -55,7 +55,7 @@ function IconoCerrar() {
 
 export function Header() {
   const { cantidadTotal } = useCarrito();
-  const { usuario, autenticado, esAdmin, cerrarSesion } = useAuth();
+  const { usuario, autenticado, esAdmin, esStaff, cerrarSesion } = useAuth();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [categoriasAbiertas, setCategoriasAbiertas] = useState(false);
 
@@ -114,9 +114,9 @@ export function Header() {
           {autenticado ? (
             <div className="relative">
               <Link
-                href={esAdmin ? "/admin" : "/cuenta"}
+                href={esAdmin || esStaff ? "/admin" : "/cuenta"}
                 className="flex items-center gap-1 rounded-md p-1.5 text-marron-800 hover:bg-marron-100"
-                title={esAdmin ? "Panel de administración" : "Mi cuenta"}
+                title={esAdmin || esStaff ? "Panel de administración" : "Mi cuenta"}
               >
                 <IconoUsuario />
                 <span className="hidden max-w-[8rem] truncate text-sm lg:inline">

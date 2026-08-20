@@ -26,8 +26,10 @@ function enriquecer(lista: Producto[]): Producto[] {
   });
 }
 
-export async function obtenerPedidos(): Promise<Orden[]> {
-  const desdeApi = await peticion<Orden[]>("/api/admin/pedidos");
+export async function obtenerPedidos(estado?: string): Promise<Orden[]> {
+  const desdeApi = await peticion<Orden[]>(
+    `/api/admin/pedidos${estado ? `?estado=${estado}` : ""}`,
+  );
   if (desdeApi) return desdeApi;
   return [...ordenes].sort(
     (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime(),

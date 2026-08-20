@@ -5,7 +5,7 @@
 // En producción estos endpoints deben protegerse con un guard de rol.
 // =====================================================================
 
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ProductoDTO } from '../catalogo/catalogo.service';
 import { UsuarioDTO } from '../auth/auth.service';
 import { AdminService, EstadisticasAdminDTO } from './admin.service';
@@ -20,10 +20,10 @@ export class AdminController {
     return this.admin.obtenerEstadisticas();
   }
 
-  // GET /api/admin/pedidos
+  // GET /api/admin/pedidos?estado=
   @Get('pedidos')
-  pedidos() {
-    return this.admin.listarPedidos();
+  pedidos(@Query('estado') estado?: string) {
+    return this.admin.listarPedidos(estado);
   }
 
   // GET /api/admin/clientes

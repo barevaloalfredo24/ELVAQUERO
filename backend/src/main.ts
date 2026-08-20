@@ -10,7 +10,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: true habilita request.rawBody para verificar la firma de webhooks.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   // Prefijo global: todos los endpoints quedan bajo /api/...
   app.setGlobalPrefix('api');
