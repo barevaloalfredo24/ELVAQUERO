@@ -1,9 +1,8 @@
 // =====================================================================
 // PÁGINA DE REGISTRO
 // ---------------------------------------------------------------------
-// Componente cliente. Crea una cuenta nueva (mock) y deja al usuario
-// en estado "no verificado" hasta confirmar su correo, tal como indica
-// el flujo de negocio del proyecto.
+// Componente cliente. Crea una cuenta nueva (correo/contraseña) o con
+// Google, y enlaza a iniciar sesión si ya tiene cuenta.
 // =====================================================================
 
 "use client";
@@ -12,9 +11,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/contexto/auth";
+import { BotonGoogle } from "@/components/tienda/BotonGoogle";
+import { CampoContrasena } from "@/components/tienda/CampoContrasena";
 
 export default function PaginaRegistro() {
-  const { registrar } = useAuth();
+  const { registrar, iniciarSesionGoogle } = useAuth();
   const router = useRouter();
 
   const [nombre, setNombre] = useState("");
@@ -22,6 +23,7 @@ export default function PaginaRegistro() {
   const [password, setPassword] = useState("");
   const [confirmacion, setConfirmacion] = useState("");
   const [error, setError] = useState("");
+  const [cargando, setCargando] = useState(false);
 
   async function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -40,6 +42,16 @@ export default function PaginaRegistro() {
     }
   }
 
+  // Registro/ingreso con Google.
+  async function manejarGoogle(credential: string) {
+    setCargando(true);
+    setError("");
+    const resultado = await iniciarSesionGoogle(credential);
+    setCargando(false);
+    if (resultado.ok) router.push("/cuenta");
+    else setError(resultado.mensaje ?? "No se pudo iniciar sesión con Google.");
+  }
+
   return (
     <div className="contenedor flex justify-center py-12">
       <div className="w-full max-w-md rounded-2xl border border-marron-100 bg-white p-8 shadow-sm">
@@ -56,6 +68,7 @@ export default function PaginaRegistro() {
               value={nombre}
               onChange={(e) => setNombre(e.target.value)}
               required
+              autoComplete="name"
               className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
               placeholder="Tu nombre"
             />
@@ -67,31 +80,30 @@ export default function PaginaRegistro() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
               placeholder="tucorreo@ejemplo.com"
             />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-marron-700">Contraseña</span>
-            <input
-              type="password"
+            <CampoContrasena
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               required
               minLength={6}
-              className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
               placeholder="Mínimo 6 caracteres"
+              autoComplete="new-password"
             />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-marron-700">Confirmar contraseña</span>
-            <input
-              type="password"
+            <CampoContrasena
               value={confirmacion}
-              onChange={(e) => setConfirmacion(e.target.value)}
+              onChange={setConfirmacion}
               required
-              className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
               placeholder="Repite tu contraseña"
+              autoComplete="new-password"
             />
           </label>
 
@@ -101,18 +113,30 @@ export default function PaginaRegistro() {
 
           <button
             type="submit"
-            className="w-full rounded-full bg-marron-700 py-3 font-semibold text-white transition hover:bg-marron-800"
+            disabled={cargando}
+            className="w-full rounded-full bg-marron-700 py-3 font-semibold text-white transition hover:bg-marron-800 disabled:opacity-60"
           >
             Crear cuenta
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-marron-500">
+        {/* Separador. */}
+        <div className="my-4 flex items-center gap-3 text-xs text-marron-400">
+          <span className="h-px flex-1 bg-marron-100" /> o <span className="h-px flex-1 bg-marron-100" />
+        </div>
+
+        <BotonGoogle onCredential={manejarGoogle} />
+
+        {/* Redirige al panel de inicio de sesión. */}
+        <div className="mt-6 text-center text-sm text-marron-500">
           ¿Ya tienes cuenta?{" "}
-          <Link href="/login" className="font-semibold text-marron-700 hover:underline">
+          <Link
+            href="/login"
+            className="font-semibold text-marron-700 hover:underline"
+          >
             Inicia sesión
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );

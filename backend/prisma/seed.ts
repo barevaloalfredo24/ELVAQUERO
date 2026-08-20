@@ -239,6 +239,7 @@ async function main() {
         envio_total: o.envio,
         impuestos_total: 0,
         total: o.total,
+        fecha_creacion: new Date(o.fecha),
         items_orden: { create: lineas },
         pagos: { create: { metodo: o.metodoPago, estado: 'pendiente', monto: o.total } },
       },

@@ -67,3 +67,54 @@ body {
     padding-inline: 2rem;
   }
 }
+
+/* =====================================================================
+   IMPRESIÓN
+   ---------------------------------------------------------------------
+   Al imprimir el panel (reportes), se ocultan la barra lateral, el
+   encabezado y los controles marcados como "no-imprimir", para dejar
+   solo el contenido del reporte.
+   ===================================================================== */
+@media print {
+  /* Página A4 con márgenes razonables. */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  aside,
+  header,
+  .no-imprimir {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .lg\:pl-64 {
+    padding-left: 0 !important;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  /* Las gráficas se imprimen en una sola columna, a lo ancho. */
+  .grid-reportes {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Cada gráfica no se parte entre páginas. */
+  .reporte-grafica {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* El encabezado del reporte y los KPIs también se mantienen juntos. */
+  .reporte-grafica,
+  .grid-reportes > section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}

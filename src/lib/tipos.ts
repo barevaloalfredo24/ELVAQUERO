@@ -188,3 +188,24 @@ export interface EstadisticasAdmin {
   ventasPorMetodoPago: PuntoSerie[];
   productosMasVendidos: { producto: { id: string; nombre: string }; cantidad: number }[];
 }
+
+// Filtros y datos del reporte de ventas.
+export interface FiltrosReporte {
+  desde?: string;
+  hasta?: string;
+  categoria?: string;
+  metodoPago?: string;
+}
+
+export interface ReporteAdmin {
+  resumen: {
+    ingresos: number;
+    ordenes: number;
+    ticketPromedio: number;
+    unidadesVendidas: number;
+  };
+  serieTiempo: { fecha: string; ingresos: number; ordenes: number }[];
+  porCategoria: { categoria: string; ingresos: number; ordenes: number }[];
+  porMetodoPago: { metodo: string; ingresos: number; porcentaje: number }[];
+  histograma: { rango: string; ordenes: number }[];
+}

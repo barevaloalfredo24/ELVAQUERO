@@ -16,6 +16,7 @@ import { useAuth } from "@/lib/contexto/auth";
 // Elementos del menú de administración.
 const ENLACES = [
   { href: "/admin", etiqueta: "Dashboard", icono: "📊" },
+  { href: "/admin/reportes", etiqueta: "Reportes", icono: "📈" },
   { href: "/admin/productos", etiqueta: "Productos", icono: "👢" },
   { href: "/admin/categorias", etiqueta: "Categorías", icono: "🏷️" },
   { href: "/admin/cupones", etiqueta: "Cupones", icono: "🎟️" },

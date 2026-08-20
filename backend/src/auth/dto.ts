@@ -29,3 +29,30 @@ export class LoginDto {
   @IsNotEmpty({ message: 'La contraseña es obligatoria.' })
   password: string;
 }
+
+// Token de Google (ID token) enviado desde el cliente.
+export class GoogleLoginDto {
+  @IsString()
+  @IsNotEmpty({ message: 'Credencial de Google no proporcionada.' })
+  credential: string;
+}
+
+// Solicitud de recuperación de contraseña.
+export class OlvidarContrasenaDto {
+  @IsEmail({}, { message: 'El correo no es válido.' })
+  email: string;
+}
+
+// Restablecimiento de contraseña con código.
+export class RestablecerContrasenaDto {
+  @IsEmail({}, { message: 'El correo no es válido.' })
+  email: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'El código es obligatorio.' })
+  codigo: string;
+
+  @IsString()
+  @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres.' })
+  nuevaContrasena: string;
+}

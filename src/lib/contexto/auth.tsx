@@ -29,6 +29,7 @@ interface AuthContexto {
   autenticado: boolean;
   esAdmin: boolean;
   iniciarSesion: (email: string, password: string) => Promise<ResultadoAuth>;
+  iniciarSesionGoogle: (credential: string) => Promise<ResultadoAuth>;
   registrar: (datos: { nombre: string; email: string; password: string }) => Promise<ResultadoAuth>;
   cerrarSesion: () => void;
 }
@@ -138,6 +139,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [setUsuario, setToken],
   );
 
+  // Inicia sesión con la cuenta de Google (ID token).
+  const iniciarSesionGoogle = useCallback(
+    async (credential: string): Promise<ResultadoAuth> => {
+      const resultado = await llamarAuth("/api/auth/google", { credential });
+      if (resultado.ok && resultado.data) {
+        setUsuario(resultado.data.usuario);
+        setToken(resultado.data.token);
+        return { ok: true };
+      }
+      return { ok: false, mensaje: "No se pudo iniciar sesión con Google." };
+    },
+    [setUsuario, setToken],
+  );
+
   const cerrarSesion = useCallback(() => {
     setUsuario(null);
     setToken(null);
@@ -150,10 +165,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       autenticado: usuario !== null,
       esAdmin: usuario?.rol === "admin",
       iniciarSesion,
+      iniciarSesionGoogle,
       registrar,
       cerrarSesion,
     }),
-    [usuario, token, iniciarSesion, registrar, cerrarSesion],
+    [usuario, token, iniciarSesion, iniciarSesionGoogle, registrar, cerrarSesion],
   );
 
   return <ContextoAuth.Provider value={valor}>{children}</ContextoAuth.Provider>;

@@ -1,0 +1,15 @@
+// =====================================================================
+// MÓDULO DE CORREO (global)
+// ---------------------------------------------------------------------
+// Expone MailService para que otros módulos (auth) envíen correos.
+// =====================================================================
+
+import { Global, Module } from '@nestjs/common';
+import { MailService } from './mail.service';
+
+@Global()
+@Module({
+  providers: [MailService],
+  exports: [MailService],
+})
+export class MailModule {}

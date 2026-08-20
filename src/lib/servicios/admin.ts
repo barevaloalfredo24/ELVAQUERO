@@ -6,7 +6,16 @@
 // =====================================================================
 
 import { ordenes, productos, usuarios, categorias } from "@/lib/datos";
-import type { Cupon, EstadisticasAdmin, Orden, Producto, Staff, Usuario } from "@/lib/tipos";
+import type {
+  Cupon,
+  EstadisticasAdmin,
+  FiltrosReporte,
+  Orden,
+  Producto,
+  ReporteAdmin,
+  Staff,
+  Usuario,
+} from "@/lib/tipos";
 import { peticion } from "@/lib/api";
 
 // Añade categoriaSlug/categoriaNombre a los productos del mock.
@@ -39,6 +48,16 @@ export async function obtenerStaff(): Promise<Staff[]> {
 export async function obtenerCupones(): Promise<Cupon[]> {
   const desdeApi = await peticion<Cupon[]>("/api/admin/cupones");
   return desdeApi ?? [];
+}
+
+export async function obtenerReporte(filtros: FiltrosReporte = {}): Promise<ReporteAdmin | null> {
+  const qs = new URLSearchParams();
+  if (filtros.desde) qs.set("desde", filtros.desde);
+  if (filtros.hasta) qs.set("hasta", filtros.hasta);
+  if (filtros.categoria) qs.set("categoria", filtros.categoria);
+  if (filtros.metodoPago) qs.set("metodoPago", filtros.metodoPago);
+  const q = qs.toString();
+  return peticion<ReporteAdmin>(`/api/admin/reportes${q ? `?${q}` : ""}`);
 }
 
 export async function obtenerAlertasStock(): Promise<Producto[]> {

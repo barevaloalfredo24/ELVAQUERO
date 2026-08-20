@@ -6,7 +6,13 @@
 
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService, UsuarioDTO } from './auth.service';
-import { LoginDto, RegistroDto } from './dto';
+import {
+  GoogleLoginDto,
+  LoginDto,
+  OlvidarContrasenaDto,
+  RegistroDto,
+  RestablecerContrasenaDto,
+} from './dto';
 import { AuthGuard } from './auth.guard';
 import type { RequestConUsuario } from './auth.guard';
 
@@ -28,6 +34,26 @@ export class AuthController {
     @Body() dto: LoginDto,
   ): Promise<{ token: string; usuario: UsuarioDTO }> {
     return this.auth.login(dto);
+  }
+
+  // POST /api/auth/google  (login/registro con cuenta de Google)
+  @Post('google')
+  loginGoogle(
+    @Body() dto: GoogleLoginDto,
+  ): Promise<{ token: string; usuario: UsuarioDTO }> {
+    return this.auth.loginGoogle(dto);
+  }
+
+  // POST /api/auth/olvidar-contrasena  (solicita código de recuperación)
+  @Post('olvidar-contrasena')
+  olvidarContrasena(@Body() dto: OlvidarContrasenaDto) {
+    return this.auth.olvidarContrasena(dto);
+  }
+
+  // POST /api/auth/restablecer-contrasena  (restablece con código)
+  @Post('restablecer-contrasena')
+  restablecerContrasena(@Body() dto: RestablecerContrasenaDto) {
+    return this.auth.restablecerContrasena(dto);
   }
 
   // GET /api/auth/me  (protegido)

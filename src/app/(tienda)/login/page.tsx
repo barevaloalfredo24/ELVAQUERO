@@ -1,10 +1,8 @@
 // =====================================================================
 // PÁGINA DE INICIO DE SESIÓN
 // ---------------------------------------------------------------------
-// Componente cliente. Usa el contexto de autenticación para iniciar
-// sesión (mock) y redirige al destino indicado o a "Mi cuenta".
-// El login con Google está simulado; se conectará a Auth0/Firebase
-// cuando exista backend.
+// Componente cliente. Permite iniciar sesión con email/contraseña o con
+// la cuenta de Google, y enlaza a la recuperación de contraseña.
 // =====================================================================
 
 "use client";
@@ -13,9 +11,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/contexto/auth";
+import { BotonGoogle } from "@/components/tienda/BotonGoogle";
+import { CampoContrasena } from "@/components/tienda/CampoContrasena";
 
 export default function PaginaLogin() {
-  const { iniciarSesion } = useAuth();
+  const { iniciarSesion, iniciarSesionGoogle } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -40,12 +40,14 @@ export default function PaginaLogin() {
     else setError(resultado.mensaje ?? "No se pudo iniciar sesión.");
   }
 
-  // Login con Google (simulado).
-  async function loginGoogle() {
+  // Login con Google (recibe el ID token desde el botón).
+  async function manejarGoogle(credential: string) {
     setCargando(true);
-    await iniciarSesion("cliente.google@example.com", "");
+    setError("");
+    const resultado = await iniciarSesionGoogle(credential);
     setCargando(false);
-    redirigir();
+    if (resultado.ok) redirigir();
+    else setError(resultado.mensaje ?? "No se pudo iniciar sesión con Google.");
   }
 
   return (
@@ -65,21 +67,30 @@ export default function PaginaLogin() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
               placeholder="tucorreo@ejemplo.com"
             />
           </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-marron-700">Contraseña</span>
-            <input
-              type="password"
+            <CampoContrasena
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={setPassword}
               required
-              className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
-              placeholder="••••••••"
+              autoComplete="current-password"
             />
           </label>
+
+          {/* Enlace de recuperación de contraseña. */}
+          <div className="text-right">
+            <Link
+              href="/recuperar-contrasena"
+              className="text-sm font-medium text-marron-600 hover:underline"
+            >
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
 
           {error && (
             <p className="rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">{error}</p>
@@ -99,15 +110,8 @@ export default function PaginaLogin() {
           <span className="h-px flex-1 bg-marron-100" /> o <span className="h-px flex-1 bg-marron-100" />
         </div>
 
-        {/* Botón Google (simulado). */}
-        <button
-          type="button"
-          onClick={loginGoogle}
-          disabled={cargando}
-          className="flex w-full items-center justify-center gap-2 rounded-full border border-marron-200 py-3 font-medium text-marron-800 transition hover:bg-marron-50"
-        >
-          <span className="text-lg">G</span> Continuar con Google
-        </button>
+        {/* Botón Google (OAuth real). */}
+        <BotonGoogle onCredential={manejarGoogle} />
 
         <p className="mt-6 text-center text-sm text-marron-500">
           ¿No tienes cuenta?{" "}
