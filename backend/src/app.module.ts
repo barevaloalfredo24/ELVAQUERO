@@ -16,6 +16,8 @@ import { ImagenesModule } from './imagenes/imagenes.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { MailModule } from './mail/mail.module';
 import { PagosModule } from './pagos/pagos.module';
+import { DeseosModule } from './deseos/deseos.module';
+import { ResenasModule } from './resenas/resenas.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { PagosModule } from './pagos/pagos.module';
     ImagenesModule,
     ReportesModule,
     PagosModule,
+    DeseosModule,
+    ResenasModule,
   ],
 })
 export class AppModule {}

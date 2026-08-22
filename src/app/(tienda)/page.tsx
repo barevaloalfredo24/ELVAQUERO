@@ -12,7 +12,6 @@ import {
   obtenerCuponesActivos,
   obtenerProductosNovedades,
 } from "@/lib/servicios/catalogo";
-import { emojiCategoria } from "@/lib/emoji";
 import { formatearPrecio } from "@/lib/util";
 import { TarjetaProducto } from "@/components/tienda/TarjetaProducto";
 
@@ -130,11 +129,26 @@ export default async function PaginaInicio() {
             <Link
               key={c.id}
               href={`/catalogo?categoria=${c.slug}`}
-              className="group flex flex-col items-center gap-2 rounded-xl border border-marron-100 bg-white p-5 text-center transition hover:-translate-y-1 hover:shadow-md"
+              className="group flex flex-col gap-2 rounded-xl border border-marron-100 bg-white p-3 text-center transition hover:-translate-y-1 hover:shadow-md"
             >
-              <span className="text-4xl transition group-hover:scale-110">
-                {emojiCategoria(c.slug)}
-              </span>
+              {c.imagen ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={c.imagen}
+                  alt={c.alt ?? c.nombre}
+                  className="aspect-[4/3] w-full rounded-lg object-cover"
+                />
+              ) : (
+                <div
+                  className="flex aspect-[4/3] w-full items-center justify-center rounded-lg bg-marron-100"
+                  role="img"
+                  aria-label={c.nombre}
+                >
+                  <span className="font-display text-lg font-bold text-marron-300">
+                    {c.nombre.charAt(0)}
+                  </span>
+                </div>
+              )}
               <span className="font-medium text-marron-800">{c.nombre}</span>
             </Link>
           ))}

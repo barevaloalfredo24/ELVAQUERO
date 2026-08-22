@@ -1,15 +1,15 @@
 // =====================================================================
 // GESTIÓN DE CATEGORÍAS (cliente)
 // ---------------------------------------------------------------------
-// CRUD de categorías para el administrador. Las mutaciones van
-// autenticadas con el token JWT.
+// CRUD de categorías para el administrador. Permite agregar una imagen
+// (con su texto alternativo). Las mutaciones van autenticadas con JWT.
 // =====================================================================
 
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useAuth } from "@/lib/contexto/auth";
-import { peticionAuth } from "@/lib/api";
+import { API_URL, peticionAuth } from "@/lib/api";
 import { obtenerCategorias } from "@/lib/servicios/catalogo";
 import type { Categoria } from "@/lib/tipos";
 
@@ -22,15 +22,18 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
   const [nombre, setNombre] = useState("");
   const [slug, setSlug] = useState("");
   const [categoriaPadreId, setCategoriaPadreId] = useState("");
+  const [imagen, setImagen] = useState("");
+  const [alt, setAlt] = useState("");
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [subiendo, setSubiendo] = useState(false);
+  const archivoRef = useRef<HTMLInputElement>(null);
 
   // Solo el administrador puede gestionar categorías.
   if (!autenticado || !esAdmin) {
     return (
       <div className="flex flex-col items-center gap-3 rounded-xl border border-marron-100 bg-white py-16 text-center">
-        <span className="text-5xl">🔐</span>
         <p className="text-lg font-medium text-marron-800">
           Inicia sesión como administrador para gestionar las categorías.
         </p>
@@ -50,6 +53,8 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
     setNombre("");
     setSlug("");
     setCategoriaPadreId("");
+    setImagen("");
+    setAlt("");
     setError("");
     setFormAbierto(true);
   }
@@ -60,8 +65,40 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
     setNombre(c.nombre);
     setSlug(c.slug);
     setCategoriaPadreId("");
+    setImagen(c.imagen ?? "");
+    setAlt(c.alt ?? "");
     setError("");
     setFormAbierto(true);
+  }
+
+  // Sube la imagen de la categoría a Cloudinary y guarda la URL.
+  async function subirImagen(archivo: File) {
+    if (!archivo) return;
+    setSubiendo(true);
+    setError("");
+    const formData = new FormData();
+    formData.append("imagen", archivo);
+    try {
+      const res = await fetch(`${API_URL}/api/admin/categorias/imagen`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        setError(data?.message ?? "No se pudo subir la imagen.");
+      } else {
+        const data = await res.json();
+        setImagen(data.url ?? "");
+        if (!alt.trim()) setAlt(nombre.trim());
+        setMensaje("Imagen subida.");
+      }
+    } catch {
+      setError("Error de conexión al subir la imagen.");
+    } finally {
+      setSubiendo(false);
+      if (archivoRef.current) archivoRef.current.value = "";
+    }
   }
 
   // Guarda (crea o actualiza) la categoría.
@@ -75,6 +112,8 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
       nombre,
       slug,
       categoriaPadreId: categoriaPadreId || undefined,
+      imagen: imagen || undefined,
+      alt: alt.trim() || nombre.trim(),
     };
 
     const resultado = editando
@@ -180,6 +219,44 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
                   ))}
               </select>
             </label>
+
+            {/* Imagen de la categoría. */}
+            <div className="sm:col-span-2">
+              <span className="mb-1 block text-sm font-medium text-marron-700">Imagen</span>
+              <div className="flex flex-wrap items-start gap-4">
+                {imagen && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={imagen}
+                    alt={alt || nombre}
+                    className="h-20 w-20 rounded-lg object-cover"
+                  />
+                )}
+                <div className="flex-1">
+                  <input
+                    ref={archivoRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const archivo = e.target.files?.[0];
+                      if (archivo) subirImagen(archivo);
+                    }}
+                    className="text-sm text-marron-600 file:mr-3 file:rounded-full file:border-0 file:bg-marron-700 file:px-4 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-marron-800"
+                  />
+                  {subiendo && <span className="ml-2 text-sm text-marron-500">Subiendo…</span>}
+                </div>
+              </div>
+            </div>
+
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block font-medium text-marron-700">Texto alternativo (alt)</span>
+              <input
+                value={alt}
+                onChange={(e) => setAlt(e.target.value)}
+                placeholder={nombre || "Texto alternativo de la imagen"}
+                className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
+              />
+            </label>
           </div>
           <div className="mt-4 flex gap-2">
             <button
@@ -202,9 +279,10 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
 
       {/* Tabla de categorías. */}
       <div className="overflow-x-auto rounded-xl border border-marron-100 bg-white shadow-sm">
-        <table className="w-full min-w-[480px] text-left text-sm">
+        <table className="w-full min-w-[520px] text-left text-sm">
           <thead className="border-b border-marron-100 bg-marron-50 text-xs uppercase tracking-wide text-marron-500">
             <tr>
+              <th className="px-4 py-3">Imagen</th>
               <th className="px-4 py-3">Nombre</th>
               <th className="px-4 py-3">Slug</th>
               <th className="px-4 py-3">Acciones</th>
@@ -213,6 +291,16 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
           <tbody className="divide-y divide-marron-50">
             {lista.map((c) => (
               <tr key={c.id} className="hover:bg-marron-50/50">
+                <td className="px-4 py-3">
+                  {c.imagen ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={c.imagen} alt={c.alt ?? c.nombre} className="h-10 w-10 rounded-lg object-cover" />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-marron-100 text-xs text-marron-400">
+                      —
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-3 font-medium text-marron-900">{c.nombre}</td>
                 <td className="px-4 py-3 text-marron-600">{c.slug}</td>
                 <td className="px-4 py-3">
@@ -237,7 +325,7 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
             ))}
             {lista.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-10 text-center text-marron-500">
+                <td colSpan={4} className="px-4 py-10 text-center text-marron-500">
                   No hay categorías. Crea la primera con el botón «Nueva categoría».
                 </td>
               </tr>

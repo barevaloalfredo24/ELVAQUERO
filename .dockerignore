@@ -1,0 +1,29 @@
+# =====================================================================
+# DOCKERIGNORE - FRONTEND (Next.js)
+# =====================================================================
+
+node_modules
+.next
+.git
+.gitignore
+
+# El backend tiene su propia imagen/contexto.
+backend
+
+# Secretos y logs (nunca entran a la imagen).
+.env
+.env.local
+.env.*.local
+*.log
+dev.log
+
+# Archivos de Docker/despliegue.
+Dockerfile
+.dockerignore
+docker-compose.yml
+nginx.conf
+
+# Documentación y misceláneos.
+README.md
+AGENTS.md
+CLAUDE.md

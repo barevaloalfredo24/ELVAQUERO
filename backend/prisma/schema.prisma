@@ -39,6 +39,8 @@ model categorias {
   nombre             String       @db.VarChar(100)
   slug               String       @unique @db.VarChar(120)
   categoria_padre_id String?      @db.Uuid
+  imagen             String?      @db.VarChar(500)
+  alt                String?      @db.VarChar(255)
   fecha_creacion     DateTime     @default(now()) @db.Timestamptz(6)
   categorias         categorias?  @relation("categoriasTocategorias", fields: [categoria_padre_id], references: [id], onUpdate: NoAction)
   other_categorias   categorias[] @relation("categoriasTocategorias")

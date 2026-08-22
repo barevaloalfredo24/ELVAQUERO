@@ -80,6 +80,26 @@ export class ImagenesService {
     return { id: imagen.id, url: imagen.url, posicion: imagen.posicion };
   }
 
+  // Sube la imagen de una categoría a Cloudinary (sin asociarla aún a BD).
+  async subirImagenCategoria(buffer: Buffer): Promise<{ url: string }> {
+    const resultado = await new Promise<UploadApiResponse>(
+      (resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'elvaquero/categorias' },
+          (error, result) => {
+            if (result) {
+              resolve(result);
+            } else {
+              reject(new Error('No se pudo subir la imagen.'));
+            }
+          },
+        );
+        stream.end(buffer);
+      },
+    );
+    return { url: resultado.secure_url };
+  }
+
   // Elimina una imagen de la base y (best-effort) de Cloudinary.
   async eliminarImagen(id: string): Promise<{ id: string }> {
     const imagen = await this.prisma.imagenes_producto.findUnique({

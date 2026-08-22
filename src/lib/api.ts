@@ -1,21 +1,41 @@
 // =====================================================================
 // CLIENTE HTTP HACIA EL BACKEND
 // ---------------------------------------------------------------------
-// Punto único de acceso a la API NestJS. Si NEXT_PUBLIC_API_URL no está
-// definida, devuelve null para que los servicios puedan usar el mock.
+// Punto único de acceso a la API NestJS.
+//   - En el servidor (RSC) usa API_URL (red interna en Docker).
+//   - En el navegador usa NEXT_PUBLIC_API_URL (relativa o absoluta).
+// Si ninguna está definida, se usa la URL relativa (ej. /api/...), útil
+// detrás de un reverse proxy (nginx) en producción.
 // =====================================================================
 
-// URL base de la API (definida en .env.local).
+// URL base para el navegador (se inyecta en el bundle en build time).
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-// Realiza una petición y devuelve el JSON; null si falla o no hay API.
+// Detecta si el código se ejecuta en el servidor.
+const esServidor = typeof window === "undefined";
+
+// Devuelve la URL base correcta según el entorno de ejecución.
+function baseUrl(): string {
+  if (esServidor) {
+    // En el servidor se prefiere la URL interna (docker network).
+    return process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "";
+  }
+  return process.env.NEXT_PUBLIC_API_URL ?? "";
+}
+
+// Construye la URL completa (o relativa si no hay base).
+function urlCompleta(ruta: string): string {
+  const base = baseUrl();
+  return base ? `${base}${ruta}` : ruta;
+}
+
+// Realiza una petición y devuelve el JSON; null si falla.
 export async function peticion<T>(
   ruta: string,
   opciones?: RequestInit,
 ): Promise<T | null> {
-  if (!API_URL) return null;
   try {
-    const res = await fetch(`${API_URL}${ruta}`, {
+    const res = await fetch(urlCompleta(ruta), {
       ...opciones,
       // No cachear para evitar datos obsoletos (stats, pedidos, etc.).
       cache: "no-store",
@@ -46,9 +66,8 @@ export async function peticionAuth<T>(
   token: string,
   opciones?: RequestInit,
 ): Promise<ResultadoPeticion<T>> {
-  if (!API_URL) return { ok: false, status: 0, mensaje: "API no configurada." };
   try {
-    const res = await fetch(`${API_URL}${ruta}`, {
+    const res = await fetch(urlCompleta(ruta), {
       ...opciones,
       headers: {
         "Content-Type": "application/json",

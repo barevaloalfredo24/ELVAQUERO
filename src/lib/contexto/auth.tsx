@@ -42,7 +42,6 @@ async function llamarAuth(
   ruta: string,
   body: Record<string, string>,
 ): Promise<{ ok: boolean; data?: { token: string; usuario: Usuario }; status: number }> {
-  if (!API_URL) return { ok: false, status: 0 };
   try {
     const res = await fetch(`${API_URL}${ruta}`, {
       method: "POST",

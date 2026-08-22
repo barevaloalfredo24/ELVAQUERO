@@ -257,6 +257,14 @@ export class CrearCategoriaDto {
   @IsOptional()
   @IsString()
   categoriaPadreId?: string;
+
+  @IsOptional()
+  @IsString()
+  imagen?: string;
+
+  @IsOptional()
+  @IsString()
+  alt?: string;
 }
 
 // Datos para actualizar una categoría (todos opcionales).
@@ -274,4 +282,12 @@ export class ActualizarCategoriaDto {
   @IsOptional()
   @IsString()
   categoriaPadreId?: string;
+
+  @IsOptional()
+  @IsString()
+  imagen?: string;
+
+  @IsOptional()
+  @IsString()
+  alt?: string;
 }

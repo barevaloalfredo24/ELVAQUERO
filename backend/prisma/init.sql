@@ -96,6 +96,8 @@ CREATE TABLE categorias (
     nombre              VARCHAR(100) NOT NULL,
     slug                VARCHAR(120) NOT NULL UNIQUE,
     categoria_padre_id  UUID REFERENCES categorias(id) ON DELETE SET NULL,
+    imagen              VARCHAR(500),
+    alt                 VARCHAR(255),
     fecha_creacion      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

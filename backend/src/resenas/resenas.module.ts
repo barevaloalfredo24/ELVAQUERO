@@ -1,16 +1,15 @@
 // =====================================================================
-// MÓDULO DE IMÁGENES
+// MÓDULO DE RESEÑAS
 // =====================================================================
 
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
-import { ImagenesController } from './imagenes.controller';
-import { ImagenesService } from './imagenes.service';
+import { ResenasController } from './resenas.controller';
+import { ResenasService } from './resenas.service';
 
 @Module({
   imports: [AuthModule],
-  controllers: [ImagenesController],
-  providers: [ImagenesService],
-  exports: [ImagenesService],
+  controllers: [ResenasController],
+  providers: [ResenasService],
 })
-export class ImagenesModule {}
+export class ResenasModule {}

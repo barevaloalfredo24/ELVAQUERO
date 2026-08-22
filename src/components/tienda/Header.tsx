@@ -12,10 +12,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { categorias } from "@/lib/datos";
-import { emojiCategoria } from "@/lib/emoji";
 import { useCarrito } from "@/lib/contexto/carrito";
 import { useAuth } from "@/lib/contexto/auth";
 import { BuscadorProductos } from "./BuscadorProductos";
+import { IconoSombrero } from "@/components/IconoSombrero";
 
 // Pequeños iconos SVG en línea (evitan una dependencia externa).
 function IconoCarrito() {
@@ -30,9 +30,17 @@ function IconoCarrito() {
 
 function IconoUsuario() {
   return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" />
+    <svg
+      viewBox="0 0 24 24"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M4.5 20.5c0-3.6 3.4-5.5 7.5-5.5s7.5 1.9 7.5 5.5" />
     </svg>
   );
 }
@@ -92,11 +100,11 @@ export function Header() {
 
         {/* Logotipo de la marca. */}
         <Link href="/" className="flex items-center gap-2" onClick={navegarYCerrar}>
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-marron-700 text-lg text-crema">
-            🤠
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-marron-700 text-crema">
+            <IconoSombrero className="h-6 w-6" />
           </span>
           <span className="font-display text-xl font-bold tracking-tight text-marron-900 sm:text-2xl">
-            El Vaquero
+            Curiosidades El Vaquero
           </span>
         </Link>
 
@@ -132,6 +140,19 @@ export function Header() {
             >
               <IconoUsuario />
               <span className="hidden text-sm lg:inline">Ingresar</span>
+            </Link>
+          )}
+
+          {/* Enlace a la lista de deseos (solo clientes autenticados). */}
+          {autenticado && !esStaff && (
+            <Link
+              href="/deseos"
+              className="flex items-center gap-1 rounded-md p-1.5 text-marron-800 hover:bg-marron-100"
+              title="Mi lista de deseos"
+            >
+              <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
             </Link>
           )}
 
@@ -174,7 +195,6 @@ export function Header() {
               className="flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-marron-800 hover:bg-marron-100"
             >
               Categorías
-              <span className="text-xs">▾</span>
             </button>
             {categoriasAbiertas && (
               <div className="absolute left-0 top-full z-10 w-56 rounded-lg border border-marron-100 bg-white py-2 shadow-lg">
@@ -183,9 +203,8 @@ export function Header() {
                     key={c.id}
                     href={`/catalogo?categoria=${c.slug}`}
                     onClick={() => setCategoriasAbiertas(false)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-marron-800 hover:bg-marron-50"
+                    className="block px-4 py-2 text-sm text-marron-800 hover:bg-marron-50"
                   >
-                    <span>{emojiCategoria(c.slug)}</span>
                     {c.nombre}
                   </Link>
                 ))}
@@ -224,9 +243,8 @@ export function Header() {
                 key={c.id}
                 href={`/catalogo?categoria=${c.slug}`}
                 onClick={navegarYCerrar}
-                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-marron-800 hover:bg-marron-100"
+                className="rounded-md px-3 py-2 text-sm text-marron-800 hover:bg-marron-100"
               >
-                <span>{emojiCategoria(c.slug)}</span>
                 {c.nombre}
               </Link>
             ))}

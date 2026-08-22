@@ -58,6 +58,7 @@ export function GestionPedidos({ pedidosInicial }: { pedidosInicial: Orden[] }) 
 
   // Estado del formulario de seguimiento.
   const [pedidoEdicion, setPedidoEdicion] = useState<Orden | null>(null);
+  const [detalleOrden, setDetalleOrden] = useState<Orden | null>(null);
   const [numeroSeguimiento, setNumeroSeguimiento] = useState("");
   const [paqueteria, setPaqueteria] = useState("");
   const [error, setError] = useState("");
@@ -98,10 +99,11 @@ export function GestionPedidos({ pedidosInicial }: { pedidosInicial: Orden[] }) 
     setMensaje("");
   }
 
-  // Guarda el seguimiento (cambia estado a "enviado").
+  // Guarda el seguimiento (cambia estado a "enviado" o actualiza los datos).
   async function guardarSeguimiento(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     if (!pedidoEdicion) return;
+    const esEdicion = Boolean(pedidoEdicion.numeroSeguimiento);
     setGuardando(true);
     setError("");
     const resultado = await peticionAuth(
@@ -113,12 +115,19 @@ export function GestionPedidos({ pedidosInicial }: { pedidosInicial: Orden[] }) 
 
     if (resultado.ok) {
       setPedidoEdicion(null);
-      setMensaje("Seguimiento asignado. El pedido está en camino.");
+      setMensaje(
+        esEdicion
+          ? "Seguimiento actualizado."
+          : "Seguimiento asignado. El pedido está en camino.",
+      );
       await recargar();
     } else {
       setError(resultado.mensaje ?? "No se pudo asignar el seguimiento.");
     }
   }
+
+  // Indica si el modal está editando un seguimiento ya existente.
+  const esEdicion = Boolean(pedidoEdicion?.numeroSeguimiento);
 
   return (
     <div className="space-y-4">
@@ -157,6 +166,13 @@ export function GestionPedidos({ pedidosInicial }: { pedidosInicial: Orden[] }) 
               <div className="flex flex-wrap items-center gap-2">
                 <InsigniaPago estadoPago={o.estadoPago} />
                 <InsigniaEstado estado={o.estado} />
+                <button
+                  type="button"
+                  onClick={() => setDetalleOrden(o)}
+                  className="rounded-full border border-marron-200 px-3 py-1 text-xs font-medium text-marron-700 hover:bg-marron-50"
+                >
+                  Ver detalle
+                </button>
               </div>
             </div>
 
@@ -173,9 +189,19 @@ export function GestionPedidos({ pedidosInicial }: { pedidosInicial: Orden[] }) 
 
             {/* Seguimiento asignado. */}
             {o.numeroSeguimiento ? (
-              <div className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-800">
-                🚚 Paquetería: <strong>{o.paqueteria}</strong> · Seguimiento:{" "}
-                <strong>{o.numeroSeguimiento}</strong>
+              <div className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                <span>
+                  🚚 Paquetería: <strong>{o.paqueteria}</strong> · Seguimiento:{" "}
+                  <strong>{o.numeroSeguimiento}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => abrirSeguimiento(o)}
+                  className="shrink-0 rounded-full border border-blue-200 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                  title="Editar seguimiento"
+                >
+                  Editar
+                </button>
               </div>
             ) : (
               <button
@@ -220,7 +246,7 @@ export function GestionPedidos({ pedidosInicial }: { pedidosInicial: Orden[] }) 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
             <h2 className="mb-4 font-display text-lg font-bold text-marron-900">
-              Asignar seguimiento · {pedidoEdicion.id}
+              {esEdicion ? "Editar seguimiento" : "Asignar seguimiento"} · {pedidoEdicion.id}
             </h2>
             <form onSubmit={guardarSeguimiento} className="space-y-4">
               <label className="block text-sm">
@@ -244,10 +270,16 @@ export function GestionPedidos({ pedidosInicial }: { pedidosInicial: Orden[] }) 
                 />
               </label>
 
-              <p className="text-xs text-marron-500">
-                Al guardar, el pedido cambiará a estado <strong>Enviado</strong> y se notificará al
-                cliente por correo.
-              </p>
+              {esEdicion ? (
+                <p className="text-xs text-marron-500">
+                  Actualiza la paquetería o el número de seguimiento del pedido.
+                </p>
+              ) : (
+                <p className="text-xs text-marron-500">
+                  Al guardar, el pedido cambiará a estado <strong>Enviado</strong> y se notificará al
+                  cliente por correo.
+                </p>
+              )}
 
               {error && (
                 <p className="rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">{error}</p>
@@ -270,6 +302,75 @@ export function GestionPedidos({ pedidosInicial }: { pedidosInicial: Orden[] }) 
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de detalle de la orden. */}
+      {detalleOrden && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-lg">
+            <div className="mb-4 flex items-start justify-between">
+              <h2 className="font-display text-lg font-bold text-marron-900">
+                Detalle · {detalleOrden.id}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setDetalleOrden(null)}
+                className="rounded-full p-1 text-marron-500 hover:bg-marron-100"
+                aria-label="Cerrar"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <InsigniaPago estadoPago={detalleOrden.estadoPago} />
+              <InsigniaEstado estado={detalleOrden.estado} />
+            </div>
+
+            {/* Cliente y pago. */}
+            <div className="space-y-1 rounded-lg bg-marron-50 p-3 text-sm">
+              <p><strong>Cliente:</strong> {detalleOrden.clienteNombre}</p>
+              <p><strong>Email:</strong> {detalleOrden.clienteEmail}</p>
+              <p><strong>Teléfono:</strong> {detalleOrden.telefono}</p>
+              <p><strong>Método de pago:</strong> {detalleOrden.metodoPago === "tarjeta" ? "Tarjeta" : "Contra entrega"}</p>
+              <p><strong>Fecha:</strong> {formatearFecha(detalleOrden.fecha)}</p>
+              <p><strong>Envío:</strong> {detalleOrden.direccionEnvio}
+                {detalleOrden.departamento ? `, ${detalleOrden.departamento}` : ""}
+              </p>
+              {detalleOrden.numeroSeguimiento && (
+                <p className="text-blue-700">
+                  🚚 {detalleOrden.paqueteria} · <strong>{detalleOrden.numeroSeguimiento}</strong>
+                </p>
+              )}
+            </div>
+
+            {/* Artículos. */}
+            <div className="mt-4">
+              <h3 className="mb-2 font-semibold text-marron-900">Artículos</h3>
+              <ul className="space-y-2 text-sm">
+                {detalleOrden.items.map((l, i) => (
+                  <li key={i} className="flex justify-between gap-2 border-b border-marron-50 pb-1">
+                    <span className="text-marron-700">
+                      {l.nombre} <span className="text-marron-400">×{l.cantidad}</span>
+                      <span className="ml-1 block text-xs text-marron-400">{l.variante}</span>
+                    </span>
+                    <span className="font-medium">{formatearPrecio(l.subtotal)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Totales. */}
+            <div className="mt-3 space-y-1 border-t border-marron-100 pt-3 text-sm">
+              <div className="flex justify-between"><span className="text-marron-500">Subtotal</span><span>{formatearPrecio(detalleOrden.subtotal)}</span></div>
+              {detalleOrden.descuento > 0 && (
+                <div className="flex justify-between text-green-700"><span>Descuento</span><span>−{formatearPrecio(detalleOrden.descuento)}</span></div>
+              )}
+              <div className="flex justify-between"><span className="text-marron-500">Envío</span><span>{detalleOrden.envio === 0 ? "Gratis" : formatearPrecio(detalleOrden.envio)}</span></div>
+              <div className="flex justify-between text-base font-bold text-marron-900"><span>Total</span><span>{formatearPrecio(detalleOrden.total)}</span></div>
+            </div>
           </div>
         </div>
       )}

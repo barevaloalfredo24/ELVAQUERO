@@ -34,7 +34,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
       <div className="flex flex-col items-center gap-3 rounded-xl border border-marron-100 bg-white py-16 text-center">
         <span className="text-5xl">🔐</span>
         <p className="text-lg font-medium text-marron-800">
-          Inicia sesión como administrador para gestionar el staff.
+          Inicia sesión como administrador para gestionar el personal.
         </p>
       </div>
     );
@@ -92,7 +92,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
 
     if (resultado.ok) {
       setFormAbierto(false);
-      setMensaje(editando ? "Perfil actualizado." : "Perfil de staff creado.");
+      setMensaje(editando ? "Perfil actualizado." : "Perfil de personal creado.");
       await recargar();
     } else {
       setError(resultado.mensaje ?? "No se pudo guardar el perfil.");
@@ -121,13 +121,13 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
     <div className="space-y-4">
       {/* Cabecera. */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-marron-500">{lista.length} perfiles de staff</p>
+        <p className="text-sm text-marron-500">{lista.length} perfiles de personal</p>
         <button
           type="button"
           onClick={abrirNuevo}
           className="rounded-full bg-marron-700 px-5 py-2 text-sm font-semibold text-white transition hover:bg-marron-800"
         >
-          + Nuevo staff
+          + Nuevo personal
         </button>
       </div>
 
@@ -143,7 +143,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
       {formAbierto && (
         <form onSubmit={guardar} className="rounded-xl border border-marron-100 bg-white p-5 shadow-sm">
           <h2 className="mb-4 font-display text-lg font-bold text-marron-900">
-            {editando ? "Editar staff" : "Nuevo perfil de staff"}
+            {editando ? "Editar personal" : "Nuevo perfil de personal"}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label className="block text-sm">
@@ -270,7 +270,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
             {lista.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-marron-500">
-                  No hay perfiles de staff. Crea el primero con el botón «Nuevo staff».
+                  No hay perfiles de personal. Crea el primero con el botón «Nuevo personal».
                 </td>
               </tr>
             )}

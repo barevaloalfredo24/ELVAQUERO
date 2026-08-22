@@ -14,18 +14,19 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/contexto/auth";
+import { IconoSombrero } from "@/components/IconoSombrero";
 
 // Elementos del menú de administración con los roles que pueden verlos.
 const ENLACES = [
-  { href: "/admin", etiqueta: "Dashboard", icono: "📊", roles: ["admin"] },
-  { href: "/admin/reportes", etiqueta: "Reportes", icono: "📈", roles: ["admin"] },
-  { href: "/admin/productos", etiqueta: "Productos", icono: "👢", roles: ["admin", "staff"] },
-  { href: "/admin/categorias", etiqueta: "Categorías", icono: "🏷️", roles: ["admin"] },
-  { href: "/admin/cupones", etiqueta: "Cupones", icono: "🎟️", roles: ["admin"] },
-  { href: "/admin/pedidos", etiqueta: "Pedidos", icono: "📦", roles: ["admin", "staff"] },
-  { href: "/admin/clientes", etiqueta: "Clientes", icono: "👥", roles: ["admin", "staff"] },
-  { href: "/admin/staff", etiqueta: "Staff", icono: "🧑‍💼", roles: ["admin"] },
-  { href: "/admin/inventario", etiqueta: "Inventario", icono: "⚠️", roles: ["admin", "staff"] },
+  { href: "/admin", etiqueta: "Dashboard", roles: ["admin"] },
+  { href: "/admin/reportes", etiqueta: "Reportes", roles: ["admin"] },
+  { href: "/admin/productos", etiqueta: "Productos", roles: ["admin", "staff"] },
+  { href: "/admin/categorias", etiqueta: "Categorías", roles: ["admin"] },
+  { href: "/admin/cupones", etiqueta: "Cupones", roles: ["admin"] },
+  { href: "/admin/pedidos", etiqueta: "Pedidos", roles: ["admin", "staff"] },
+  { href: "/admin/clientes", etiqueta: "Clientes", roles: ["admin", "staff"] },
+  { href: "/admin/staff", etiqueta: "Personal", roles: ["admin"] },
+  { href: "/admin/inventario", etiqueta: "Inventario", roles: ["admin", "staff"] },
 ];
 
 // Rutas permitidas para el rol staff.
@@ -72,11 +73,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-full flex-col">
           {/* Logotipo del panel. */}
           <div className="flex items-center gap-2 border-b border-marron-800 px-5 py-4">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-marron-700 text-lg">
-              🤠
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-marron-700 text-crema">
+              <IconoSombrero className="h-6 w-6" />
             </span>
             <div>
-              <p className="font-display text-lg font-bold text-crema">El Vaquero</p>
+              <p className="font-display text-lg font-bold text-crema">Curiosidades El Vaquero</p>
               <p className="text-xs text-marron-400">Panel de administración</p>
             </div>
           </div>
@@ -88,13 +89,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 key={e.href}
                 href={e.href}
                 onClick={() => setAbierto(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
+                className={`block rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   esActivo(e.href)
                     ? "bg-marron-800 text-white"
                     : "text-marron-300 hover:bg-marron-900 hover:text-white"
                 }`}
               >
-                <span>{e.icono}</span>
                 {e.etiqueta}
               </Link>
             ))}
@@ -104,17 +104,17 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="border-t border-marron-800 px-3 py-4">
             <Link
               href="/"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-marron-300 hover:bg-marron-900 hover:text-white"
+              className="block rounded-lg px-3 py-2.5 text-sm font-medium text-marron-300 hover:bg-marron-900 hover:text-white"
             >
-              <span>🏠</span> Ver tienda
+              Ver tienda
             </Link>
             {usuario && (
               <button
                 type="button"
                 onClick={salir}
-                className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-marron-300 hover:bg-marron-900 hover:text-white"
+                className="mt-1 block w-full rounded-lg px-3 py-2.5 text-left text-sm font-medium text-marron-300 hover:bg-marron-900 hover:text-white"
               >
-                <span>🚪</span> Cerrar sesión
+                Cerrar sesión
               </button>
             )}
           </div>

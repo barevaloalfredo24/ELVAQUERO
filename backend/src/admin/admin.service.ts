@@ -89,6 +89,7 @@ export class AdminService {
       numeroSeguimiento: o.numero_seguimiento,
       paqueteria: o.paqueteria,
       direccionEnvio: direccion ? direccion.calle : '',
+      departamento: direccion?.provincia ?? '',
       telefono: o.usuarios.telefono ?? '',
       fecha: o.fecha_creacion.toISOString(),
     };

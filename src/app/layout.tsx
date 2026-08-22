@@ -25,8 +25,8 @@ const playfair = Playfair_Display({
 // Metadatos base del sitio (SEO).
 export const metadata: Metadata = {
   title: {
-    default: "El Vaquero | Vestimenta y accesorios vaqueros",
-    template: "%s | El Vaquero",
+    default: "Curiosidades El Vaquero",
+    template: "%s | Curiosidades El Vaquero",
   },
   description:
     "Tienda en línea de botas, sombreros, cinturones y accesorios vaqueros. Calidad de cuero y envíos a toda Guatemala.",

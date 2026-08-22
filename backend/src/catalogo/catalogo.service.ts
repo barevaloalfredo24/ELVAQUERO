@@ -55,6 +55,8 @@ export interface CategoriaDTO {
   id: string;
   nombre: string;
   slug: string;
+  imagen?: string | null;
+  alt?: string | null;
 }
 
 export interface FiltrosCatalogo {
@@ -142,7 +144,7 @@ export class CatalogoService {
   async listarCategorias(): Promise<CategoriaDTO[]> {
     return this.prisma.categorias.findMany({
       orderBy: { nombre: 'asc' },
-      select: { id: true, nombre: true, slug: true },
+      select: { id: true, nombre: true, slug: true, imagen: true, alt: true },
     });
   }
 
@@ -248,6 +250,26 @@ export class CatalogoService {
     });
 
     return productos.map((p) => this.aProductoDTO(p));
+  }
+
+  // Obtiene varios productos por sus ids (para la lista de deseos).
+  async obtenerProductosPorIds(ids: string[]): Promise<ProductoDTO[]> {
+    if (ids.length === 0) return [];
+    const productos = await this.prisma.productos.findMany({
+      where: { id: { in: ids }, esta_activo: true },
+      include: {
+        categorias: true,
+        variantes_producto: { where: { esta_activo: true } },
+        imagenes_producto: { orderBy: { posicion: 'asc' } },
+        resenas: { where: { esta_aprobada: true } },
+      },
+    });
+    const mapa = new Map(productos.map((p) => [p.id, p]));
+    // Conserva el orden de los ids recibidos.
+    return ids
+      .map((id) => mapa.get(id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .map((p) => this.aProductoDTO(p));
   }
 
   // Búsqueda difusa de productos: tolera errores ortográficos (pg_trgm)

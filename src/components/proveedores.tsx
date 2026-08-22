@@ -9,11 +9,14 @@
 
 import { CarritoProvider } from "@/lib/contexto/carrito";
 import { AuthProvider } from "@/lib/contexto/auth";
+import { DeseosProvider } from "@/lib/contexto/deseos";
 
 export function Proveedores({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <CarritoProvider>{children}</CarritoProvider>
+      <CarritoProvider>
+        <DeseosProvider>{children}</DeseosProvider>
+      </CarritoProvider>
     </AuthProvider>
   );
 }

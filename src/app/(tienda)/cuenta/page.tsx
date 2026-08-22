@@ -49,6 +49,7 @@ export default function PaginaCuenta() {
   const { usuario, autenticado, token, cerrarSesion } = useAuth();
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [cargando, setCargando] = useState(true);
+  const [detalleId, setDetalleId] = useState<string | null>(null);
 
   // Carga SOLO los pedidos del usuario autenticado desde la API.
   useEffect(() => {
@@ -161,6 +162,42 @@ export default function PaginaCuenta() {
                   {o.items.reduce((acc, l) => acc + l.cantidad, 0)} artículo(s) ·{" "}
                   {o.metodoPago === "tarjeta" ? "Tarjeta" : "Contra entrega"}
                 </p>
+
+                {/* Detalle expandible. */}
+                {detalleId === o.id && (
+                  <div className="mt-3 rounded-lg bg-marron-50 p-3 text-sm">
+                    <p className="text-marron-600">
+                      📍 {o.direccionEnvio}
+                      {o.departamento ? `, ${o.departamento}` : ""}
+                    </p>
+                    <ul className="mt-2 space-y-1">
+                      {o.items.map((l, i) => (
+                        <li key={i} className="flex justify-between gap-2 text-marron-700">
+                          <span>
+                            {l.nombre} <span className="text-marron-400">×{l.cantidad}</span>
+                            <span className="ml-1 text-xs text-marron-400">{l.variante}</span>
+                          </span>
+                          <span className="font-medium">{formatearPrecio(l.subtotal)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-2 flex justify-between border-t border-marron-100 pt-2">
+                      <span>Subtotal</span>
+                      <span>{formatearPrecio(o.subtotal)}</span>
+                    </div>
+                    {o.descuento > 0 && (
+                      <div className="flex justify-between text-green-700">
+                        <span>Descuento</span>
+                        <span>−{formatearPrecio(o.descuento)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>Envío</span>
+                      <span>{o.envio === 0 ? "Gratis" : formatearPrecio(o.envio)}</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Seguimiento del envío (si ya fue enviado). */}
                 {o.numeroSeguimiento && (
                   <div className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-800">
@@ -168,9 +205,18 @@ export default function PaginaCuenta() {
                     <strong>{o.numeroSeguimiento}</strong>
                   </div>
                 )}
-                <p className="mt-1 text-right font-semibold text-marron-900">
-                  Total: {formatearPrecio(o.total)}
-                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setDetalleId((id) => (id === o.id ? null : o.id))}
+                    className="text-sm font-medium text-marron-600 hover:underline"
+                  >
+                    {detalleId === o.id ? "Ocultar detalle" : "Ver detalle"}
+                  </button>
+                  <p className="font-semibold text-marron-900">
+                    Total: {formatearPrecio(o.total)}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

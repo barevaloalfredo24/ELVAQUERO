@@ -6,6 +6,7 @@
 
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { ImagenesModule } from '../imagenes/imagenes.module';
 import { CategoriasGestionController } from './categorias.controller';
 import { CategoriasGestionService } from './categorias.service';
 import { CuponesGestionController } from './cupones.controller';
@@ -18,7 +19,7 @@ import { StaffController } from './staff.controller';
 import { StaffService } from './staff.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, ImagenesModule],
   controllers: [
     StaffController,
     ProductosGestionController,

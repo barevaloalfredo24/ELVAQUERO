@@ -16,6 +16,7 @@ import { useCarrito } from "@/lib/contexto/carrito";
 import { formatearPrecio } from "@/lib/util";
 import { API_URL } from "@/lib/api";
 import { PagoRecurrente } from "@/components/tienda/PagoRecurrente";
+import { DEPARTAMENTOS_GUATEMALA } from "@/lib/departamentos";
 import type { Cupon, MetodoPago, Orden } from "@/lib/tipos";
 
 const ENVIO = 45;
@@ -32,6 +33,7 @@ export default function PaginaCheckout() {
   const [nombre, setNombre] = useState(usuario?.nombre ?? "");
   const [telefono, setTelefono] = useState(usuario?.telefono ?? "");
   const [direccion, setDireccion] = useState(usuario?.direccion ?? "");
+  const [departamento, setDepartamento] = useState("Guatemala");
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
 
@@ -223,6 +225,7 @@ export default function PaginaCheckout() {
           items: lineas.map((l) => ({ varianteId: l.varianteId, cantidad: l.cantidad })),
           metodoPago: "tarjeta",
           direccionEnvio: direccion.trim(),
+          departamento,
           telefono: telefono.trim(),
           cuponCodigo: cuponAplicado?.codigo ?? undefined,
         }),
@@ -272,6 +275,7 @@ export default function PaginaCheckout() {
           items: lineas.map((l) => ({ varianteId: l.varianteId, cantidad: l.cantidad })),
           metodoPago,
           direccionEnvio: direccion.trim(),
+          departamento,
           telefono: telefono.trim(),
           cuponCodigo: cuponAplicado?.codigo ?? undefined,
         }),
@@ -309,6 +313,7 @@ export default function PaginaCheckout() {
       metodoPago,
       estado: metodoPago === "tarjeta" ? "pendiente" : "pago_pendiente",
       direccionEnvio: direccion.trim(),
+      departamento,
       telefono: telefono.trim(),
       fecha: new Date().toISOString(),
     };
@@ -363,6 +368,20 @@ export default function PaginaCheckout() {
                   className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
                   placeholder="+502 …"
                 />
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block font-medium text-marron-700">Departamento</span>
+                <select
+                  value={departamento}
+                  onChange={(e) => setDepartamento(e.target.value)}
+                  className="w-full rounded-lg border border-marron-200 bg-white px-3 py-2 outline-none focus:border-marron-500"
+                >
+                  {DEPARTAMENTOS_GUATEMALA.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="block text-sm sm:col-span-2">
                 <span className="mb-1 block font-medium text-marron-700">Dirección de entrega</span>

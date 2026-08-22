@@ -32,14 +32,26 @@ export type Moneda = "GTQ" | "USD";
 // ---------------------------------------------------------------------
 
 // Una categoría de productos (botas, sombreros, etc.).
-// descripcion e icono son opcionales: la base de datos no los contempla;
-// el icono se deriva del slug con la utilidad emojiCategoria().
+// imagen y alt son opcionales: si no hay imagen, se muestra un color
+// de respaldo (el ícono ya no se usa).
 export interface Categoria {
   id: string;
   nombre: string;
   slug: string;
   descripcion?: string;
   icono?: string;
+  imagen?: string | null;
+  alt?: string | null;
+}
+
+// Reseña de un producto (calificación de 1 a 5 estrellas).
+export interface Resena {
+  id: string;
+  usuarioId: string;
+  nombreUsuario: string;
+  calificacion: number;
+  comentario: string | null;
+  fechaCreacion: string;
 }
 
 // Variante de un producto (talla + color) con su propio stock y precio.
@@ -167,6 +179,7 @@ export interface Orden {
   numeroSeguimiento?: string | null;
   paqueteria?: string | null;
   direccionEnvio: string;
+  departamento?: string;
   telefono: string;
   fecha: string; // ISO datetime
 }

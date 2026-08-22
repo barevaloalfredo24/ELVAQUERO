@@ -43,6 +43,10 @@ export class CrearOrdenDto {
 
   @IsString()
   @IsNotEmpty()
+  departamento: string;
+
+  @IsString()
+  @IsNotEmpty()
   telefono: string;
 
   @IsOptional()

@@ -9,7 +9,6 @@
 
 import Link from "next/link";
 import { obtenerCategorias, obtenerProductos } from "@/lib/servicios/catalogo";
-import { emojiCategoria } from "@/lib/emoji";
 import type { FiltrosCatalogo } from "@/lib/tipos";
 import { TarjetaProducto } from "@/components/tienda/TarjetaProducto";
 
@@ -85,13 +84,12 @@ export default async function PaginaCatalogo({
               <li key={c.id}>
                 <Link
                   href={urlCategoria(c.slug)}
-                  className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
+                  className={`block rounded-md px-3 py-2 text-sm ${
                     categoria === c.slug
                       ? "bg-marron-100 font-semibold text-marron-900"
                       : "text-marron-700 hover:bg-marron-50"
                   }`}
                 >
-                  <span>{emojiCategoria(c.slug)}</span>
                   {c.nombre}
                 </Link>
               </li>
@@ -121,7 +119,7 @@ export default async function PaginaCatalogo({
                     : "bg-white text-marron-700 ring-1 ring-marron-200"
                 }`}
               >
-                {emojiCategoria(c.slug)} {c.nombre}
+                {c.nombre}
               </Link>
             ))}
           </div>

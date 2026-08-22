@@ -32,8 +32,10 @@ export class CategoriasGestionService {
         nombre: dto.nombre.trim(),
         slug,
         categoria_padre_id: dto.categoriaPadreId || null,
+        imagen: dto.imagen?.trim() || null,
+        alt: dto.alt?.trim() || dto.nombre.trim(),
       },
-      select: { id: true, nombre: true, slug: true },
+      select: { id: true, nombre: true, slug: true, imagen: true, alt: true },
     });
   }
 
@@ -49,6 +51,8 @@ export class CategoriasGestionService {
     if (dto.categoriaPadreId !== undefined) {
       data.categoria_padre_id = dto.categoriaPadreId || null;
     }
+    if (dto.imagen !== undefined) data.imagen = dto.imagen.trim() || null;
+    if (dto.alt !== undefined) data.alt = dto.alt.trim() || null;
 
     if (dto.slug !== undefined) {
       const slug = dto.slug.trim().toLowerCase();
@@ -65,7 +69,7 @@ export class CategoriasGestionService {
     return this.prisma.categorias.update({
       where: { id },
       data,
-      select: { id: true, nombre: true, slug: true },
+      select: { id: true, nombre: true, slug: true, imagen: true, alt: true },
     });
   }
 

@@ -17,7 +17,9 @@ import {
 import { formatearPrecio } from "@/lib/util";
 import { ImagenProducto } from "@/components/tienda/ImagenProducto";
 import { SelectorProducto } from "@/components/tienda/SelectorProducto";
+import { BotonDeseo } from "@/components/tienda/BotonDeseo";
 import { TarjetaProducto } from "@/components/tienda/TarjetaProducto";
+import { ResenasProducto } from "@/components/tienda/ResenasProducto";
 
 // Pre-genera las páginas de todos los productos en el build (SSG).
 export async function generateStaticParams() {
@@ -89,6 +91,7 @@ export default async function PaginaProducto({
               <span className="text-dorado">★</span>
               <span className="font-medium">{producto.calificacion.toFixed(1)}</span>
               <span>· {producto.numResenas} reseñas</span>
+              <BotonDeseo productoId={producto.id} />
             </div>
           </div>
 
@@ -123,6 +126,9 @@ export default async function PaginaProducto({
           </div>
         </div>
       </div>
+
+      {/* Reseñas y calificación (clientes). */}
+      <ResenasProducto productoId={producto.id} />
 
       {/* Productos relacionados. */}
       {relacionados.length > 0 && (

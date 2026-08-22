@@ -16,6 +16,7 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { mapearEstado, mapearEstadoPago } from '../common/mapeos';
 import { calcularDescuento, validarCupon } from '../common/cupones';
+import { esDepartamentoValido } from '../common/departamentos';
 import { CrearOrdenDto } from './dto';
 
 export interface LineaOrdenDTO {
@@ -43,6 +44,7 @@ export interface OrdenDTO {
   numeroSeguimiento: string | null;
   paqueteria: string | null;
   direccionEnvio: string;
+  departamento: string;
   telefono: string;
   fecha: string;
 }
@@ -78,7 +80,16 @@ export class OrdenesService {
 
     // El staff solo gestiona productos; no puede realizar pedidos.
     if (usuario.rol === 'staff') {
-      throw new ForbiddenException('Los usuarios de staff no pueden realizar pedidos.');
+      throw new ForbiddenException(
+        'Los usuarios de staff no pueden realizar pedidos.',
+      );
+    }
+
+    // La cobertura de envío se limita a Guatemala y sus departamentos.
+    if (!esDepartamentoValido(dto.departamento)) {
+      throw new BadRequestException(
+        'La cobertura de envío es únicamente dentro de la República de Guatemala.',
+      );
     }
 
     // Carga cada variante con su producto para validar stock y precios.
@@ -152,12 +163,13 @@ export class OrdenesService {
 
     // Transacción: crea dirección, orden, ítems y pago; descuenta stock.
     const orden = await this.prisma.$transaction(async (tx) => {
-      // Guarda la dirección de envío como texto libre.
+      // Guarda la dirección de envío (calle + departamento).
       const direccion = await tx.direcciones.create({
         data: {
           usuario_id: usuarioId,
           calle: dto.direccionEnvio,
           ciudad: 'Guatemala',
+          provincia: dto.departamento.trim(),
           pais: 'Guatemala',
         },
       });
@@ -265,6 +277,7 @@ export class OrdenesService {
       numeroSeguimiento: null,
       paqueteria: null,
       direccionEnvio: dto.direccionEnvio,
+      departamento: dto.departamento.trim(),
       telefono: dto.telefono,
       fecha: orden.fecha_creacion.toISOString(),
     };
@@ -302,6 +315,7 @@ export class OrdenesService {
       numeroSeguimiento: o.numero_seguimiento,
       paqueteria: o.paqueteria,
       direccionEnvio: direccion ? direccion.calle : '',
+      departamento: direccion?.provincia ?? '',
       telefono: o.usuarios.telefono ?? '',
       fecha: o.fecha_creacion.toISOString(),
     };

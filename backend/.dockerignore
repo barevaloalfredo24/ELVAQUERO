@@ -1,0 +1,18 @@
+# =====================================================================
+# DOCKERIGNORE - BACKEND (NestJS)
+# =====================================================================
+
+node_modules
+dist
+.git
+.gitignore
+
+# Secretos y logs.
+.env
+*.log
+backend.log
+backend.err.log
+
+# Archivos de Docker.
+Dockerfile
+.dockerignore
