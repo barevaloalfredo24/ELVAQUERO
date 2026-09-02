@@ -9,7 +9,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  /* No incluyas output: "standalone" para Vercel */
+  outputFileTracingExcludes: {
+    '*': ['./backend/**/*'],
+  },
 };
 
 export default nextConfig;
