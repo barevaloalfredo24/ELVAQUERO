@@ -17,8 +17,14 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // CORS abierto para desarrollo (restringir orígenes en producción).
-  app.enableCors();
-
+app.enableCors({
+  origin: [
+    'https://elvaquero-2lvh.vercel.app', // Tu frontend en producción
+    'http://localhost:3000',            // Desarrollo local Next.js
+  ],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  credentials: true,
+});
   // Valida y transforma los DTOs automáticamente.
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
