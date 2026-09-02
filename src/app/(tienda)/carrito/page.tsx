@@ -11,6 +11,7 @@ import Link from "next/link";
 import { useCarrito } from "@/lib/contexto/carrito";
 import { useAuth } from "@/lib/contexto/auth";
 import { formatearPrecio } from "@/lib/util";
+import { urlImagen } from "@/lib/cloudinary";
 
 // Costo fijo de envío y umbral de envío gratis.
 const ENVIO = 45;
@@ -85,9 +86,20 @@ export default function PaginaCarrito() {
               key={`${l.productoId}-${l.varianteId}`}
               className="flex items-center gap-4 rounded-xl border border-marron-100 bg-white p-4"
             >
-              {/* Miniatura de marcador de posición. */}
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-marron-200 to-marron-400 text-2xl">
-                🧺
+              {/* Miniatura del producto. */}
+              <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-marron-100">
+                {l.imagen ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={urlImagen(l.imagen, 160)}
+                    alt={l.nombre}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-2xl">
+                    🧺
+                  </div>
+                )}
               </div>
 
               {/* Información del producto. */}

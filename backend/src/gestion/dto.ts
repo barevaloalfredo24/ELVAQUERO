@@ -250,9 +250,10 @@ export class CrearCategoriaDto {
   @IsNotEmpty({ message: 'El nombre es obligatorio.' })
   nombre: string;
 
+  // El slug se genera automáticamente a partir del nombre si no se envía.
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: 'El slug es obligatorio.' })
-  slug: string;
+  slug?: string;
 
   @IsOptional()
   @IsString()

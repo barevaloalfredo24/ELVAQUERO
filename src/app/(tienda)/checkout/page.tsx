@@ -363,10 +363,13 @@ export default function PaginaCheckout() {
               <label className="block text-sm">
                 <span className="mb-1 block font-medium text-marron-700">Teléfono</span>
                 <input
+                  type="tel"
+                  inputMode="numeric"
                   value={telefono}
-                  onChange={(e) => setTelefono(e.target.value)}
+                  onChange={(e) => setTelefono(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  maxLength={8}
                   className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
-                  placeholder="+502 …"
+                  placeholder="Ej. 58608456"
                 />
               </label>
               <label className="block text-sm">
@@ -534,17 +537,25 @@ export default function PaginaCheckout() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={enviando}
-              className="w-full rounded-full bg-marron-700 py-3 font-semibold text-white transition hover:bg-marron-800 disabled:opacity-60"
-            >
-              {enviando
-                ? "Procesando…"
-                : metodoPago === "tarjeta"
-                  ? "Pagar con tarjeta"
-                  : "Confirmar pedido"}
-            </button>
+            <div className="flex gap-2">
+              <Link
+                href="/catalogo"
+                className="shrink-0 rounded-full border border-marron-200 px-4 py-3 text-center text-sm font-medium text-marron-700 transition hover:bg-marron-50"
+              >
+                Regresar
+              </Link>
+              <button
+                type="submit"
+                disabled={enviando}
+                className="w-full rounded-full bg-marron-700 py-3 font-semibold text-white transition hover:bg-marron-800 disabled:opacity-60"
+              >
+                {enviando
+                  ? "Procesando…"
+                  : metodoPago === "tarjeta"
+                    ? "Pagar con tarjeta"
+                    : "Confirmar pedido"}
+              </button>
+            </div>
           </div>
         </aside>
       </form>

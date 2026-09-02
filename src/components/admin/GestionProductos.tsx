@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/contexto/auth";
 import { API_URL, peticion, peticionAuth } from "@/lib/api";
 import { formatearPrecio } from "@/lib/util";
 import { filtrarPorBusqueda } from "@/lib/busqueda";
+import { comprimirImagen } from "@/lib/imagen";
 import type { Categoria, Imagen, Producto } from "@/lib/tipos";
 
 // Fila de variante en el formulario.
@@ -47,6 +48,8 @@ export function GestionProductos({
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
+  const [imagenNueva, setImagenNueva] = useState<File | null>(null);
+  const [previewNueva, setPreviewNueva] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const archivoRef = useRef<HTMLInputElement>(null);
 
@@ -75,15 +78,17 @@ export function GestionProductos({
     }
   }
 
-  // Sube una imagen del producto (solo en modo edición).
-  async function subirImagen(archivo: File) {
-    if (!editando || !archivo) return;
+  // Sube una imagen a un producto (se usa al crear y al editar).
+  async function subirImagenAProducto(productoId: string, archivo: File) {
     setSubiendo(true);
     setError("");
-    const formData = new FormData();
-    formData.append("imagen", archivo);
     try {
-      const res = await fetch(`${API_URL}/api/admin/productos/${editando.id}/imagenes`, {
+      // Comprime/redimensiona a 4:3 (1200x900) antes de subir.
+      const comprimida = await comprimirImagen(archivo);
+      const formData = new FormData();
+      formData.append("imagen", comprimida, "producto.jpg");
+
+      const res = await fetch(`${API_URL}/api/admin/productos/${productoId}/imagenes`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -93,14 +98,28 @@ export function GestionProductos({
         setError(data?.message ?? "No se pudo subir la imagen.");
       } else {
         setMensaje("Imagen subida.");
-        await recargar();
       }
     } catch {
-      setError("Error de conexión al subir la imagen.");
+      setError("No se pudo procesar o subir la imagen.");
     } finally {
       setSubiendo(false);
       if (archivoRef.current) archivoRef.current.value = "";
     }
+  }
+
+  // Sube una imagen a un producto ya existente (modo edición).
+  async function subirImagen(archivo: File) {
+    if (!editando || !archivo) return;
+    await subirImagenAProducto(editando.id, archivo);
+    await recargar();
+  }
+
+  // Al seleccionar una imagen para un producto nuevo, guarda el archivo y su vista previa.
+  function manejarImagenNueva(evento: React.ChangeEvent<HTMLInputElement>) {
+    const archivo = evento.target.files?.[0];
+    if (!archivo) return;
+    setImagenNueva(archivo);
+    setPreviewNueva(URL.createObjectURL(archivo));
   }
 
   // Elimina una imagen del producto.
@@ -128,6 +147,8 @@ export function GestionProductos({
     setCategoriaId("");
     setPrecioBase("");
     setVariantes([{ talla: "", color: "", stock: "", precio: "" }]);
+    setImagenNueva(null);
+    setPreviewNueva(null);
     setError("");
     setFormAbierto(true);
   }
@@ -193,24 +214,39 @@ export function GestionProductos({
       variantes: variantesLimpias,
     };
 
-    const resultado = editando
-      ? await peticionAuth(`/api/admin/productos/${editando.id}`, token!, {
-          method: "PATCH",
-          body: JSON.stringify(cuerpo),
-        })
-      : await peticionAuth("/api/admin/productos", token!, {
-          method: "POST",
-          body: JSON.stringify(cuerpo),
-        });
+    let nuevoId: string | null = null;
+    let ok = false;
+    let mensajeError = "No se pudo guardar el producto.";
+
+    if (editando) {
+      const r = await peticionAuth(`/api/admin/productos/${editando.id}`, token!, {
+        method: "PATCH",
+        body: JSON.stringify(cuerpo),
+      });
+      ok = r.ok;
+      mensajeError = r.mensaje ?? mensajeError;
+    } else {
+      const r = await peticionAuth<{ id: string }>("/api/admin/productos", token!, {
+        method: "POST",
+        body: JSON.stringify(cuerpo),
+      });
+      ok = r.ok;
+      mensajeError = r.mensaje ?? mensajeError;
+      if (r.data?.id) nuevoId = r.data.id;
+    }
 
     setCargando(false);
 
-    if (resultado.ok) {
+    if (ok) {
+      // Sube la imagen adjunta (solo en creación).
+      if (nuevoId && imagenNueva) {
+        await subirImagenAProducto(nuevoId, imagenNueva);
+      }
       setFormAbierto(false);
       setMensaje(editando ? "Producto actualizado." : "Producto creado.");
       await recargar();
     } else {
-      setError(resultado.mensaje ?? "No se pudo guardar el producto.");
+      setError(mensajeError);
     }
   }
 
@@ -377,45 +413,66 @@ export function GestionProductos({
             </div>
           </div>
 
-          {/* Imágenes (solo en modo edición). */}
-          {editando && (
-            <div className="mt-4 rounded-lg border border-dashed border-marron-200 p-4">
-              <span className="mb-2 block font-medium text-marron-700">Imágenes del producto</span>
-              <div className="flex flex-wrap gap-3">
-                {editando.imagenes.map((img) => (
-                  <div key={img.id} className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={img.url}
-                      alt={editando.nombre}
-                      className="h-24 w-24 rounded-lg object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => eliminarImagen(img)}
-                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white hover:bg-red-700"
-                      title="Eliminar imagen"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-3 flex items-center gap-3">
+          {/* Imagen del producto (adjuntar al crear, gestionar al editar). */}
+          <div className="mt-4 rounded-lg border border-dashed border-marron-200 p-4">
+            <span className="mb-2 block font-medium text-marron-700">Imagen del producto</span>
+
+            {editando ? (
+              <>
+                <div className="flex flex-wrap gap-3">
+                  {editando.imagenes.map((img) => (
+                    <div key={img.id} className="relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img.url}
+                        alt={editando.nombre}
+                        className="h-24 w-24 rounded-lg object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => eliminarImagen(img)}
+                        className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white hover:bg-red-700"
+                        title="Eliminar imagen"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <input
+                    ref={archivoRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const archivo = e.target.files?.[0];
+                      if (archivo) subirImagen(archivo);
+                    }}
+                    className="text-sm text-marron-600 file:mr-3 file:rounded-full file:border-0 file:bg-marron-700 file:px-4 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-marron-800"
+                  />
+                  {subiendo && <span className="text-sm text-marron-500">Subiendo…</span>}
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                {previewNueva && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={previewNueva}
+                    alt="Vista previa"
+                    className="h-24 w-24 rounded-lg object-cover"
+                  />
+                )}
                 <input
-                  ref={archivoRef}
                   type="file"
                   accept="image/*"
-                  onChange={(e) => {
-                    const archivo = e.target.files?.[0];
-                    if (archivo) subirImagen(archivo);
-                  }}
+                  onChange={manejarImagenNueva}
                   className="text-sm text-marron-600 file:mr-3 file:rounded-full file:border-0 file:bg-marron-700 file:px-4 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-marron-800"
                 />
-                {subiendo && <span className="text-sm text-marron-500">Subiendo…</span>}
+                {imagenNueva && <span className="text-sm text-marron-500">{imagenNueva.name}</span>}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div className="mt-4 flex gap-2">
             <button

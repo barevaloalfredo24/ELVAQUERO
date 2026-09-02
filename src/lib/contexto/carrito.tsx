@@ -28,6 +28,7 @@ export interface LineaCarrito {
   color: string;
   precioUnitario: number;
   cantidad: number;
+  imagen?: string; // URL de la foto principal del producto
 }
 
 interface CarritoContexto {

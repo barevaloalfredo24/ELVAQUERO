@@ -6,6 +6,7 @@
 // =====================================================================
 
 import type { Producto } from "@/lib/tipos";
+import { urlImagen } from "@/lib/cloudinary";
 
 // Color sólido asociado a cada categoría (por slug), para el fallback.
 const colores: Record<string, string> = {
@@ -25,7 +26,7 @@ export function ImagenProducto({ producto }: { producto: Producto }) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={url}
+        src={urlImagen(url, 600)}
         alt={producto.nombre}
         className="aspect-[4/3] w-full object-cover"
       />

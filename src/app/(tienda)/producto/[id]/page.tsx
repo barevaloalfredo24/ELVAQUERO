@@ -15,7 +15,7 @@ import {
   obtenerProductosRelacionados,
 } from "@/lib/servicios/catalogo";
 import { formatearPrecio } from "@/lib/util";
-import { ImagenProducto } from "@/components/tienda/ImagenProducto";
+import { GaleriaProducto } from "@/components/tienda/GaleriaProducto";
 import { SelectorProducto } from "@/components/tienda/SelectorProducto";
 import { BotonDeseo } from "@/components/tienda/BotonDeseo";
 import { TarjetaProducto } from "@/components/tienda/TarjetaProducto";
@@ -72,10 +72,8 @@ export default async function PaginaProducto({
 
       {/* Ficha del producto: imagen + información. */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Columna de imagen. */}
-        <div className="overflow-hidden rounded-2xl border border-marron-100 bg-white shadow-sm">
-          <ImagenProducto producto={producto} />
-        </div>
+        {/* Columna de imagen (galería con miniaturas). */}
+        <GaleriaProducto producto={producto} />
 
         {/* Columna de información. */}
         <div className="flex flex-col gap-4">

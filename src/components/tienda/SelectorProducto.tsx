@@ -59,6 +59,7 @@ export function SelectorProducto({ producto }: { producto: Producto }) {
         talla: variante!.talla,
         color: variante!.color,
         precioUnitario: variante!.precio,
+        imagen: producto.imagenes?.[0]?.url,
       },
       cantidad,
     );

@@ -11,6 +11,7 @@ import { useRef, useState } from "react";
 import { useAuth } from "@/lib/contexto/auth";
 import { API_URL, peticionAuth } from "@/lib/api";
 import { obtenerCategorias } from "@/lib/servicios/catalogo";
+import { comprimirImagen } from "@/lib/imagen";
 import type { Categoria } from "@/lib/tipos";
 
 export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Categoria[] }) {
@@ -20,7 +21,6 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
   const [formAbierto, setFormAbierto] = useState(false);
   const [editando, setEditando] = useState<Categoria | null>(null);
   const [nombre, setNombre] = useState("");
-  const [slug, setSlug] = useState("");
   const [categoriaPadreId, setCategoriaPadreId] = useState("");
   const [imagen, setImagen] = useState("");
   const [alt, setAlt] = useState("");
@@ -51,7 +51,6 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
   function abrirNuevo() {
     setEditando(null);
     setNombre("");
-    setSlug("");
     setCategoriaPadreId("");
     setImagen("");
     setAlt("");
@@ -63,7 +62,6 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
   function abrirEditar(c: Categoria) {
     setEditando(c);
     setNombre(c.nombre);
-    setSlug(c.slug);
     setCategoriaPadreId("");
     setImagen(c.imagen ?? "");
     setAlt(c.alt ?? "");
@@ -76,9 +74,12 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
     if (!archivo) return;
     setSubiendo(true);
     setError("");
-    const formData = new FormData();
-    formData.append("imagen", archivo);
     try {
+      // Comprime/redimensiona a 4:3 (1200x900) antes de subir.
+      const comprimida = await comprimirImagen(archivo);
+      const formData = new FormData();
+      formData.append("imagen", comprimida, "categoria.jpg");
+
       const res = await fetch(`${API_URL}/api/admin/categorias/imagen`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -94,7 +95,7 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
         setMensaje("Imagen subida.");
       }
     } catch {
-      setError("Error de conexión al subir la imagen.");
+      setError("No se pudo procesar o subir la imagen.");
     } finally {
       setSubiendo(false);
       if (archivoRef.current) archivoRef.current.value = "";
@@ -110,7 +111,6 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
 
     const cuerpo: Record<string, unknown> = {
       nombre,
-      slug,
       categoriaPadreId: categoriaPadreId || undefined,
       imagen: imagen || undefined,
       alt: alt.trim() || nombre.trim(),
@@ -182,7 +182,7 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
             {editando ? "Editar categoría" : "Nueva categoría"}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="block text-sm">
+            <label className="block text-sm sm:col-span-2">
               <span className="mb-1 block font-medium text-marron-700">Nombre</span>
               <input
                 value={nombre}
@@ -190,16 +190,6 @@ export function GestionCategorias({ categoriasInicial }: { categoriasInicial: Ca
                 required
                 className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
                 placeholder="Botas"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1 block font-medium text-marron-700">Slug (URL)</span>
-              <input
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                required
-                className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
-                placeholder="botas"
               />
             </label>
             <label className="block text-sm sm:col-span-2">

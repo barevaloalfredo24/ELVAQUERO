@@ -14,13 +14,24 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { ActualizarCategoriaDto, CrearCategoriaDto } from './dto';
 
+// Genera un slug a partir de un texto (minúsculas, sin acentos, guiones).
+function slugificar(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 @Injectable()
 export class CategoriasGestionService {
   constructor(private prisma: PrismaService) {}
 
   // Crea una categoría.
   async crearCategoria(dto: CrearCategoriaDto) {
-    const slug = dto.slug.trim().toLowerCase();
+    const slug = (dto.slug?.trim() || slugificar(dto.nombre)).toLowerCase();
     const existente = await this.prisma.categorias.findUnique({
       where: { slug },
     });
