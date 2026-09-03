@@ -14,7 +14,7 @@ import { Resend } from 'resend';
 export class MailService {
   private resend: Resend | null;
 
-  constructor(config: ConfigService) {
+  constructor(private readonly config: ConfigService) {
     const apiKey = config.get<string>('RESEND_API_KEY');
     this.resend = apiKey ? new Resend(apiKey) : null;
   }
@@ -28,7 +28,8 @@ export class MailService {
     if (!this.resend) return false;
     try {
       const { error } = await this.resend.emails.send({
-        from: process.env.EMAIL_FROM ?? 'El Vaquero <onboarding@resend.dev>',
+        
+from: this.config.get<string>('EMAIL_FROM') ?? 'El Vaquero <ventas@send.curiosidadeselvaquero.online>',
         to: [destinatario],
         subject: asunto,
         html,

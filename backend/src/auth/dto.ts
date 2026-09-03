@@ -10,49 +10,49 @@ import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 export class RegistroDto {
   @IsString()
   @IsNotEmpty({ message: 'El nombre es obligatorio.' })
-  nombre: string;
+  nombre!: string;
 
   @IsEmail({}, { message: 'El correo no es válido.' })
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres.' })
-  password: string;
+  password!: string;
 }
 
 // Datos para iniciar sesión.
 export class LoginDto {
   @IsEmail({}, { message: 'El correo no es válido.' })
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'La contraseña es obligatoria.' })
-  password: string;
+  password!: string;
 }
 
 // Token de Google (ID token) enviado desde el cliente.
 export class GoogleLoginDto {
   @IsString()
   @IsNotEmpty({ message: 'Credencial de Google no proporcionada.' })
-  credential: string;
+  credential!: string;
 }
 
 // Solicitud de recuperación de contraseña.
 export class OlvidarContrasenaDto {
   @IsEmail({}, { message: 'El correo no es válido.' })
-  email: string;
+  email!: string;
 }
 
 // Restablecimiento de contraseña con código.
 export class RestablecerContrasenaDto {
   @IsEmail({}, { message: 'El correo no es válido.' })
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty({ message: 'El código es obligatorio.' })
-  codigo: string;
+  codigo!: string;
 
   @IsString()
   @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres.' })
-  nuevaContrasena: string;
+  nuevaContrasena!: string;
 }
