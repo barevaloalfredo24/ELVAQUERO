@@ -27,15 +27,21 @@ export class MailService {
   ): Promise<boolean> {
     if (!this.resend) return false;
     try {
-      const { error } = await this.resend.emails.send({
-        
-from: this.config.get<string>('EMAIL_FROM') ?? 'El Vaquero <ventas@send.curiosidadeselvaquero.online>',
+      const { data, error } = await this.resend.emails.send({
+        from: this.config.get<string>('EMAIL_FROM') ?? 'El Vaquero <ventas@send.curiosidadeselvaquero.online>',
         to: [destinatario],
         subject: asunto,
         html,
       });
-      return !error;
-    } catch {
+
+      if (error) {
+        console.error('[Resend Error]:', error); // Registra el error devuelto por Resend
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error('[Resend Exception]:', err); //  Registra si ocurre un crash inesperado
       return false;
     }
   }
