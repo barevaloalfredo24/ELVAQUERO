@@ -28,7 +28,7 @@ export class MailService {
     if (!this.resend) return false;
     try {
       const { data, error } = await this.resend.emails.send({
-        from: this.config.get<string>('EMAIL_FROM') ?? 'El Vaquero <ventas@send.curiosidadeselvaquero.online>',
+        from: this.config.get<string>('EMAIL_FROM') ?? 'El Vaquero <ventas@curiosidadeselvaquero.online>',
         to: [destinatario],
         subject: asunto,
         html,
