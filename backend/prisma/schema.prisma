@@ -233,6 +233,7 @@ model productos {
   slug                String               @unique @db.VarChar(220)
   descripcion         String?
   precio_base         Decimal              @db.Decimal(12, 2)
+  descuento_porcentaje Decimal?            @db.Decimal(5, 2)
   esta_activo         Boolean              @default(true)
   fecha_creacion      DateTime             @default(now()) @db.Timestamptz(6)
   fecha_actualizacion DateTime             @default(now()) @db.Timestamptz(6)

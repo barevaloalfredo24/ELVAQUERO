@@ -24,6 +24,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
   const [correo, setCorreo] = useState("");
   const [password, setPassword] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [rol, setRol] = useState<"admin" | "staff">("staff");
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
@@ -53,6 +54,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
     setCorreo("");
     setPassword("");
     setTelefono("");
+    setRol("staff");
     setError("");
     setFormAbierto(true);
   }
@@ -64,6 +66,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
     setCorreo(s.email);
     setPassword("");
     setTelefono(s.telefono ?? "");
+    setRol(s.rol ?? "staff");
     setError("");
     setFormAbierto(true);
   }
@@ -75,7 +78,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
     setMensaje("");
     setCargando(true);
 
-    const cuerpo: Record<string, unknown> = { nombre, correo, telefono };
+    const cuerpo: Record<string, unknown> = { nombre, correo, telefono, rol };
     if (password) cuerpo.password = password;
 
     const resultado = editando
@@ -186,6 +189,17 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
                 className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
               />
             </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-marron-700">Rol</span>
+              <select
+                value={rol}
+                onChange={(e) => setRol(e.target.value as "admin" | "staff")}
+                className="w-full rounded-lg border border-marron-200 bg-white px-3 py-2 outline-none focus:border-marron-500"
+              >
+                <option value="staff">Staff (acceso limitado)</option>
+                <option value="admin">Admin (acceso total)</option>
+              </select>
+            </label>
           </div>
           <div className="mt-4 flex gap-2">
             <button
@@ -212,6 +226,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
           <thead className="border-b border-marron-100 bg-marron-50 text-xs uppercase tracking-wide text-marron-500">
             <tr>
               <th className="px-4 py-3">Nombre</th>
+              <th className="px-4 py-3">Rol</th>
               <th className="px-4 py-3">Correo</th>
               <th className="px-4 py-3">Teléfono</th>
               <th className="px-4 py-3">Registro</th>
@@ -223,6 +238,17 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
             {lista.map((s) => (
               <tr key={s.id} className="hover:bg-marron-50/50">
                 <td className="px-4 py-3 font-medium text-marron-900">{s.nombre}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium uppercase ${
+                      s.rol === "admin"
+                        ? "bg-marron-700 text-white"
+                        : "bg-marron-100 text-marron-700"
+                    }`}
+                  >
+                    {s.rol}
+                  </span>
+                </td>
                 <td className="px-4 py-3 text-marron-600">{s.email}</td>
                 <td className="px-4 py-3 text-marron-600">{s.telefono ?? "—"}</td>
                 <td className="px-4 py-3 text-marron-600">{formatearFecha(s.fechaRegistro)}</td>
@@ -269,7 +295,7 @@ export function GestionStaff({ staffInicial }: { staffInicial: Staff[] }) {
             ))}
             {lista.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-marron-500">
+                <td colSpan={7} className="px-4 py-10 text-center text-marron-500">
                   No hay perfiles de personal. Crea el primero con el botón «Nuevo personal».
                 </td>
               </tr>

@@ -21,6 +21,9 @@ const CLAVE_TOKEN = "elvaquero-token";
 export interface ResultadoAuth {
   ok: boolean;
   mensaje?: string;
+  requiereVerificacion?: boolean;
+  email?: string;
+  codigoDev?: string;
 }
 
 interface AuthContexto {
@@ -32,6 +35,7 @@ interface AuthContexto {
   iniciarSesion: (email: string, password: string) => Promise<ResultadoAuth>;
   iniciarSesionGoogle: (credential: string) => Promise<ResultadoAuth>;
   registrar: (datos: { nombre: string; email: string; password: string }) => Promise<ResultadoAuth>;
+  verificarCorreo: (email: string, codigo: string) => Promise<ResultadoAuth>;
   cerrarSesion: () => void;
 }
 
@@ -41,7 +45,17 @@ const ContextoAuth = createContext<AuthContexto | null>(null);
 async function llamarAuth(
   ruta: string,
   body: Record<string, string>,
-): Promise<{ ok: boolean; data?: { token: string; usuario: Usuario }; status: number }> {
+): Promise<{
+  ok: boolean;
+  data?: {
+    token: string;
+    usuario: Usuario;
+    requiereVerificacion?: boolean;
+    codigoDev?: string;
+  };
+  status: number;
+  mensaje?: string;
+}> {
   try {
     const res = await fetch(`${API_URL}${ruta}`, {
       method: "POST",
@@ -49,7 +63,10 @@ async function llamarAuth(
       body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => null);
-    return { ok: res.ok, data, status: res.status };
+    const mensaje = Array.isArray(data?.message)
+      ? (data.message as string[]).join(", ")
+      : data?.message;
+    return { ok: res.ok, data, status: res.status, mensaje };
   } catch {
     return { ok: false, status: 0 };
   }
@@ -72,9 +89,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(resultado.data.token);
         return { ok: true };
       }
-      // Si el backend respondió con credenciales inválidas.
+      // Si el backend respondió con credenciales inválidas o requiere verificación.
       if (resultado.status === 401) {
-        return { ok: false, mensaje: "Credenciales inválidas." };
+        return {
+          ok: false,
+          mensaje: resultado.mensaje ?? "Credenciales inválidas.",
+        };
       }
 
       // --- Respaldo mock (sin backend disponible) ---
@@ -111,6 +131,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password: datos.password,
       });
       if (resultado.ok && resultado.data) {
+        if (resultado.data.requiereVerificacion) {
+          return {
+            ok: true,
+            requiereVerificacion: true,
+            email,
+            codigoDev: resultado.data.codigoDev,
+          };
+        }
         setUsuario(resultado.data.usuario);
         setToken(resultado.data.token);
         return { ok: true };
@@ -153,6 +181,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [setUsuario, setToken],
   );
 
+  // Verifica el correo con el código recibido.
+  const verificarCorreo = useCallback(
+    async (email: string, codigo: string): Promise<ResultadoAuth> => {
+      try {
+        const res = await fetch(`${API_URL}/api/auth/verificar-correo`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim().toLowerCase(), codigo }),
+        });
+        if (res.ok) return { ok: true };
+        const data = await res.json().catch(() => null);
+        return { ok: false, mensaje: data?.message ?? "Código inválido o expirado." };
+      } catch {
+        return { ok: false, mensaje: "Error de conexión con el backend." };
+      }
+    },
+    [],
+  );
+
   const cerrarSesion = useCallback(() => {
     setUsuario(null);
     setToken(null);
@@ -168,9 +215,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       iniciarSesion,
       iniciarSesionGoogle,
       registrar,
+      verificarCorreo,
       cerrarSesion,
     }),
-    [usuario, token, iniciarSesion, iniciarSesionGoogle, registrar, cerrarSesion],
+    [usuario, token, iniciarSesion, iniciarSesionGoogle, registrar, verificarCorreo, cerrarSesion],
   );
 
   return <ContextoAuth.Provider value={valor}>{children}</ContextoAuth.Provider>;

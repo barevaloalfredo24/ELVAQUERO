@@ -10,6 +10,7 @@ import type {
   Cupon,
   EstadisticasAdmin,
   FiltrosReporte,
+  Notificacion,
   Orden,
   Producto,
   ReporteAdmin,
@@ -50,6 +51,15 @@ export async function obtenerStaff(): Promise<Staff[]> {
 export async function obtenerCupones(): Promise<Cupon[]> {
   const desdeApi = await peticion<Cupon[]>("/api/admin/cupones");
   return desdeApi ?? [];
+}
+
+export async function obtenerNotificaciones(): Promise<Notificacion[]> {
+  const desdeApi = await peticion<Notificacion[]>("/api/admin/notificaciones");
+  return desdeApi ?? [];
+}
+
+export async function marcarNotificacionesLeidas(): Promise<void> {
+  await peticion("/api/admin/notificaciones/leer", { method: "POST" });
 }
 
 export async function obtenerReporte(filtros: FiltrosReporte = {}): Promise<ReporteAdmin | null> {

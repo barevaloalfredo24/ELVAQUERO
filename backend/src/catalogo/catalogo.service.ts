@@ -49,6 +49,8 @@ export interface ProductoDTO {
   stockTotal: number;
   umbralStock: number;
   disponible: boolean;
+  estaActivo: boolean;
+  descuentoActivo: number | null;
 }
 
 export interface CategoriaDTO {
@@ -88,8 +90,11 @@ export class CatalogoService {
   // Mapea un producto de Prisma al DTO del frontend.
   private aProductoDTO(p: ProductoConDetalle): ProductoDTO {
     const precioBase = this.n(p.precio_base);
+    const descuento = Number(p.descuento_porcentaje ?? 0);
 
     // Convierte variantes: extrae talla/color del JSONB de atributos.
+    // El precio se devuelve ORIGINAL (sin descuento); el descuento se
+    // aplica en el cliente y al crear la orden.
     const variantes: VarianteDTO[] = p.variantes_producto.map((v) => {
       const at = (v.atributos ?? {}) as { talla?: string; color?: string };
       return {
@@ -122,7 +127,7 @@ export class CatalogoService {
       categoriaSlug: p.categorias?.slug ?? '',
       categoriaNombre: p.categorias?.nombre ?? '',
       precio: precioBase,
-      precioAnterior: undefined, // El esquema no contempla precios de oferta
+      precioAnterior: undefined,
       moneda: 'GTQ',
       imagenes: p.imagenes_producto.map((i) => ({
         id: i.id,
@@ -137,6 +142,8 @@ export class CatalogoService {
       stockTotal,
       umbralStock,
       disponible: p.esta_activo && stockTotal > 0,
+      estaActivo: p.esta_activo,
+      descuentoActivo: descuento > 0 ? descuento : null,
     };
   }
 
@@ -252,6 +259,20 @@ export class CatalogoService {
     return productos.map((p) => this.aProductoDTO(p));
   }
 
+  // Lista TODOS los productos (activos e inactivos) para el panel admin.
+  async listarTodosLosProductos(): Promise<ProductoDTO[]> {
+    const productos = await this.prisma.productos.findMany({
+      orderBy: { fecha_creacion: 'desc' },
+      include: {
+        categorias: true,
+        variantes_producto: { where: { esta_activo: true } },
+        imagenes_producto: { orderBy: { posicion: 'asc' } },
+        resenas: { where: { esta_aprobada: true } },
+      },
+    });
+    return productos.map((p) => this.aProductoDTO(p));
+  }
+
   // Obtiene varios productos por sus ids (para la lista de deseos).
   async obtenerProductosPorIds(ids: string[]): Promise<ProductoDTO[]> {
     if (ids.length === 0) return [];
@@ -266,10 +287,10 @@ export class CatalogoService {
     });
     const mapa = new Map(productos.map((p) => [p.id, p]));
     // Conserva el orden de los ids recibidos.
-    return ids
+    const ordenados = ids
       .map((id) => mapa.get(id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p))
-      .map((p) => this.aProductoDTO(p));
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
+    return ordenados.map((p) => this.aProductoDTO(p));
   }
 
   // Búsqueda difusa de productos: tolera errores ortográficos (pg_trgm)
@@ -294,7 +315,8 @@ export class CatalogoService {
         ${condCategoria}
         AND (
           p.nombre ILIKE ${'%' + q + '%'}
-          OR word_similarity(${q}, p.nombre) > 0.3
+          OR word_similarity(${q}, p.nombre) > 0.25
+          OR similarity(${q}, p.nombre) > 0.2
         )
       ORDER BY
         CASE
@@ -322,10 +344,10 @@ export class CatalogoService {
 
     // Conserva el orden de relevancia devuelto por la consulta.
     const mapa = new Map(productos.map((p) => [p.id, p]));
-    return ids
+    const ordenados = ids
       .map((id) => mapa.get(id))
-      .filter((p): p is NonNullable<typeof p> => Boolean(p))
-      .map((p) => this.aProductoDTO(p));
+      .filter((p): p is NonNullable<typeof p> => Boolean(p));
+    return ordenados.map((p) => this.aProductoDTO(p));
   }
 
   // Productos más recientes (para la sección de "novedades").
@@ -355,7 +377,8 @@ export class CatalogoService {
         resenas: { where: { esta_aprobada: true } },
       },
     });
-    return p ? this.aProductoDTO(p) : null;
+    if (!p) return null;
+    return this.aProductoDTO(p);
   }
 
   // Obtiene un producto por slug.
@@ -369,7 +392,8 @@ export class CatalogoService {
         resenas: { where: { esta_aprobada: true } },
       },
     });
-    return p ? this.aProductoDTO(p) : null;
+    if (!p) return null;
+    return this.aProductoDTO(p);
   }
 
   // Productos relacionados (misma categoría, excluyendo el actual).

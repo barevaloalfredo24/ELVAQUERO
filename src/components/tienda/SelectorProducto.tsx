@@ -12,7 +12,7 @@ import { useMemo, useState } from "react";
 import type { Producto } from "@/lib/tipos";
 import { useCarrito } from "@/lib/contexto/carrito";
 import { useAuth } from "@/lib/contexto/auth";
-import { formatearPrecio } from "@/lib/util";
+import { formatearPrecio, precioConDescuento } from "@/lib/util";
 
 export function SelectorProducto({ producto }: { producto: Producto }) {
   const { agregar } = useCarrito();
@@ -51,6 +51,7 @@ export function SelectorProducto({ producto }: { producto: Producto }) {
   // Añade el producto al carrito con una "foto" (snapshot) de sus datos.
   function agregarAlCarrito() {
     if (agotado) return;
+    const precioFinal = precioConDescuento(variante!.precio, producto.descuentoActivo);
     agregar(
       {
         productoId: producto.id,
@@ -58,7 +59,7 @@ export function SelectorProducto({ producto }: { producto: Producto }) {
         nombre: producto.nombre,
         talla: variante!.talla,
         color: variante!.color,
-        precioUnitario: variante!.precio,
+        precioUnitario: precioFinal,
         imagen: producto.imagenes?.[0]?.url,
       },
       cantidad,
@@ -154,7 +155,8 @@ export function SelectorProducto({ producto }: { producto: Producto }) {
             disabled={agotado}
             className="flex-1 rounded-full bg-marron-700 px-6 py-3 font-semibold text-white transition hover:bg-marron-800 disabled:cursor-not-allowed disabled:bg-marron-300"
           >
-            Agregar al carrito · {formatearPrecio(variante.precio * cantidad)}
+            Agregar al carrito ·{" "}
+            {formatearPrecio(precioConDescuento(variante.precio, producto.descuentoActivo) * cantidad)}
           </button>
         </div>
       )}

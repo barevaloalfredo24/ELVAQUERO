@@ -91,6 +91,8 @@ export interface Producto {
   stockTotal: number; // Suma del stock de todas las variantes
   umbralStock: number; // Umbral para alerta de bajo stock
   disponible: boolean;
+  estaActivo: boolean; // Visible en el catálogo (admin puede ocultarlo)
+  descuentoActivo: number | null; // % de descuento por cupón de producto
 }
 
 // Filtros que acepta el servicio de catálogo.
@@ -123,6 +125,7 @@ export interface Staff {
   nombre: string;
   email: string;
   telefono: string | null;
+  rol: "admin" | "staff";
   estaActivo: boolean;
   fechaRegistro: string;
 }
@@ -139,6 +142,15 @@ export interface Cupon {
   fechaInicioValidez: string; // ISO date
   fechaFinValidez: string; // ISO date
   estaActivo: boolean;
+}
+
+// Notificación para el panel admin (pedidos nuevos / stock bajo).
+export interface Notificacion {
+  id: string;
+  tipo: "stock_bajo" | "nueva_orden" | "pago_fallido" | "nueva_resena";
+  mensaje: string;
+  estaLeida: boolean;
+  fechaCreacion: string;
 }
 
 // ---------------------------------------------------------------------

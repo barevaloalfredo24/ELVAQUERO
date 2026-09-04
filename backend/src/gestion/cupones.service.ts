@@ -123,6 +123,7 @@ export class CuponesGestionService {
       where: { id },
       data,
     });
+
     return aCuponDTO(actualizado);
   }
 

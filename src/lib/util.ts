@@ -21,6 +21,16 @@ export function formatearFecha(fecha: string): string {
   });
 }
 
+// Aplica un descuento porcentual a un precio (0..100).
+export function precioConDescuento(
+  precio: number,
+  descuento: number | null | undefined,
+): number {
+  const d = Number(descuento ?? 0);
+  if (d <= 0) return precio;
+  return Math.round(precio * (1 - d / 100) * 100) / 100;
+}
+
 // Simula la latencia de una llamada a la API.
 // Se mantiene en 0ms durante el desarrollo para una experiencia fluida;
 // cuando exista backend real, estos métodos se sustituirán por fetch().

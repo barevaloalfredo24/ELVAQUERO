@@ -37,6 +37,10 @@ export class CrearStaffDto {
   @IsOptional()
   @IsString()
   telefono?: string;
+
+  @IsOptional()
+  @IsIn(['admin', 'staff'], { message: 'Rol no válido.' })
+  rol?: 'admin' | 'staff';
 }
 
 // ------------------------- PEDIDOS / SEGUIMIENTO -------------------------
@@ -144,6 +148,10 @@ export class ActualizarStaffDto {
   telefono?: string;
 
   @IsOptional()
+  @IsIn(['admin', 'staff'], { message: 'Rol no válido.' })
+  rol?: 'admin' | 'staff';
+
+  @IsOptional()
   @IsBoolean()
   estaActivo?: boolean;
 }
@@ -197,6 +205,16 @@ export class CrearProductoDto {
   precioBase: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  descuentoPorcentaje?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  umbralStockBajo?: number;
+
+  @IsOptional()
   @IsBoolean()
   estaActivo?: boolean;
 
@@ -230,6 +248,16 @@ export class ActualizarProductoDto {
   @IsNumber()
   @Min(0)
   precioBase?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  descuentoPorcentaje?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  umbralStockBajo?: number;
 
   @IsOptional()
   @IsBoolean()

@@ -14,7 +14,7 @@ function v(talla: string, color: string, stock: number, precio: number): Variant
   return { id: `${talla.toLowerCase()}-${color.toLowerCase()}`, talla, color, stock, precio };
 }
 
-export const productos: Producto[] = [
+export const productosBase: Omit<Producto, "estaActivo" | "descuentoActivo">[] = [
   // ============================ BOTAS ============================
   {
     id: "p-bota-rodeo",
@@ -469,3 +469,10 @@ export const productos: Producto[] = [
     disponible: true,
   },
 ];
+
+// Añade los campos nuevos con valores por defecto (respaldo mock).
+export const productos: Producto[] = productosBase.map((p) => ({
+  ...p,
+  estaActivo: true,
+  descuentoActivo: null,
+}));

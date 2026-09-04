@@ -12,6 +12,7 @@ import {
   OlvidarContrasenaDto,
   RegistroDto,
   RestablecerContrasenaDto,
+  VerificarCorreoDto,
 } from './dto';
 import { AuthGuard } from './auth.guard';
 import type { RequestConUsuario } from './auth.guard';
@@ -48,6 +49,12 @@ export class AuthController {
   @Post('olvidar-contrasena')
   olvidarContrasena(@Body() dto: OlvidarContrasenaDto) {
     return this.auth.olvidarContrasena(dto);
+  }
+
+  // POST /api/auth/verificar-correo  (valida el código de registro)
+  @Post('verificar-correo')
+  verificarCorreo(@Body() dto: VerificarCorreoDto) {
+    return this.auth.verificarCorreo(dto);
   }
 
   // POST /api/auth/restablecer-contrasena  (restablece con código)

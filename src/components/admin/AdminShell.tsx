@@ -15,10 +15,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/lib/contexto/auth";
 import { IconoSombrero } from "@/components/IconoSombrero";
+import { CampanaNotificaciones } from "./CampanaNotificaciones";
 
 // Elementos del menú de administración con los roles que pueden verlos.
 const ENLACES = [
-  { href: "/admin", etiqueta: "Dashboard", roles: ["admin"] },
   { href: "/admin/reportes", etiqueta: "Reportes", roles: ["admin"] },
   { href: "/admin/productos", etiqueta: "Productos", roles: ["admin", "staff"] },
   { href: "/admin/categorias", etiqueta: "Categorías", roles: ["admin"] },
@@ -50,8 +50,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const enlacesVisibles = ENLACES.filter((e) => e.roles.includes(rol));
 
   // Marca como activo el enlace que coincide con la ruta actual.
-  const esActivo = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+  const esActivo = (href: string) => pathname.startsWith(href);
 
   // El staff no puede acceder a rutas fuera de sus permisos.
   const accesoDenegado = esStaff && !RUTAS_STAFF.some((r) => pathname.startsWith(r));
@@ -146,15 +145,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <h1 className="font-display text-lg font-bold text-marron-900">
             {enlacesVisibles.find((e) => esActivo(e.href))?.etiqueta ?? "Panel"}
           </h1>
-          {/* Usuario conectado. */}
-          {usuario && (
-            <div className="ml-auto flex items-center gap-2 text-sm text-marron-600">
-              <span className="hidden sm:inline">{usuario.nombre}</span>
-              <span className="rounded-full bg-marron-100 px-2.5 py-1 text-xs font-medium uppercase text-marron-700">
-                {usuario.rol}
-              </span>
-            </div>
-          )}
+          {/* Usuario conectado + notificaciones. */}
+          <div className="ml-auto flex items-center gap-2">
+            <CampanaNotificaciones />
+            {usuario && (
+              <div className="flex items-center gap-2 text-sm text-marron-600">
+                <span className="hidden sm:inline">{usuario.nombre}</span>
+                <span className="rounded-full bg-marron-100 px-2.5 py-1 text-xs font-medium uppercase text-marron-700">
+                  {usuario.rol}
+                </span>
+              </div>
+            )}
+          </div>
         </header>
 
         {/* Contenido de cada página del panel (o mensaje de sin permiso). */}

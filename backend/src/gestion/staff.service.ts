@@ -20,6 +20,7 @@ export interface StaffDTO {
   nombre: string;
   email: string;
   telefono: string | null;
+  rol: 'admin' | 'staff';
   estaActivo: boolean;
   fechaRegistro: string;
 }
@@ -28,10 +29,10 @@ export interface StaffDTO {
 export class StaffService {
   constructor(private prisma: PrismaService) {}
 
-  // Lista todos los perfiles de staff.
+  // Lista todos los perfiles de personal (admin y staff).
   async listarStaff(): Promise<StaffDTO[]> {
     const staff = await this.prisma.usuarios.findMany({
-      where: { rol: 'staff' },
+      where: { rol: { in: ['admin', 'staff'] } },
       orderBy: { fecha_creacion: 'desc' },
     });
     return staff.map((u) => ({
@@ -39,12 +40,13 @@ export class StaffService {
       nombre: u.nombre_completo,
       email: u.correo,
       telefono: u.telefono,
+      rol: u.rol as 'admin' | 'staff',
       estaActivo: u.esta_activo,
       fechaRegistro: u.fecha_creacion.toISOString(),
     }));
   }
 
-  // Crea un perfil de staff (correo ya verificado, sin validación por email).
+  // Crea un perfil de personal (correo ya verificado, sin validación por email).
   async crearStaff(dto: CrearStaffDto): Promise<StaffDTO> {
     const correo = dto.correo.trim().toLowerCase();
     const existente = await this.prisma.usuarios.findUnique({
@@ -55,13 +57,14 @@ export class StaffService {
     }
 
     const contrasenaHash = await bcrypt.hash(dto.password, 10);
+    const rol = dto.rol ?? 'staff';
     const usuario = await this.prisma.usuarios.create({
       data: {
         nombre_completo: dto.nombre.trim(),
         correo,
         contrasena_hash: contrasenaHash,
         telefono: dto.telefono ?? null,
-        rol: 'staff',
+        rol,
         correo_verificado: true,
       },
     });
@@ -71,6 +74,7 @@ export class StaffService {
       nombre: usuario.nombre_completo,
       email: usuario.correo,
       telefono: usuario.telefono,
+      rol: usuario.rol as 'admin' | 'staff',
       estaActivo: usuario.esta_activo,
       fechaRegistro: usuario.fecha_creacion.toISOString(),
     };
@@ -86,6 +90,7 @@ export class StaffService {
     const data: Record<string, unknown> = {};
     if (dto.nombre !== undefined) data.nombre_completo = dto.nombre.trim();
     if (dto.telefono !== undefined) data.telefono = dto.telefono;
+    if (dto.rol !== undefined) data.rol = dto.rol;
     if (dto.estaActivo !== undefined) data.esta_activo = dto.estaActivo;
     if (dto.password)
       data.contrasena_hash = await bcrypt.hash(dto.password, 10);
@@ -112,6 +117,7 @@ export class StaffService {
       nombre: actualizado.nombre_completo,
       email: actualizado.correo,
       telefono: actualizado.telefono,
+      rol: actualizado.rol as 'admin' | 'staff',
       estaActivo: actualizado.esta_activo,
       fechaRegistro: actualizado.fecha_creacion.toISOString(),
     };
@@ -127,11 +133,11 @@ export class StaffService {
     return { id };
   }
 
-  // Busca un usuario con rol 'staff' o lanza 404.
+  // Busca un usuario con rol 'admin' o 'staff' o lanza 404.
   private async obtenerStaff(id: string) {
     const usuario = await this.prisma.usuarios.findUnique({ where: { id } });
-    if (!usuario || usuario.rol !== 'staff') {
-      throw new NotFoundException('Perfil de staff no encontrado.');
+    if (!usuario || (usuario.rol !== 'admin' && usuario.rol !== 'staff')) {
+      throw new NotFoundException('Perfil de personal no encontrado.');
     }
     return usuario;
   }

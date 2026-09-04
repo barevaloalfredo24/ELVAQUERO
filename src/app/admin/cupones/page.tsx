@@ -1,14 +1,24 @@
 // =====================================================================
-// PÁGINA ADMIN: CUPONES
+// PÁGINA ADMIN: CUPONES Y OFERTAS
 // ---------------------------------------------------------------------
-// Componente de servidor que carga los cupones y los pasa al componente
-// cliente de gestión (crear/editar/desactivar).
+// Componente de servidor que carga los cupones generales y los productos,
+// y renderiza la gestión de cupones + el panel de ofertas por producto.
 // =====================================================================
 
-import { obtenerCupones } from "@/lib/servicios/admin";
+import { obtenerCupones, obtenerProductosAdmin } from "@/lib/servicios/admin";
 import { GestionCupones } from "@/components/admin/GestionCupones";
+import { GestionOfertas } from "@/components/admin/GestionOfertas";
 
 export default async function PaginaCupones() {
-  const cupones = await obtenerCupones();
-  return <GestionCupones cuponesInicial={cupones} />;
+  const [cupones, productos] = await Promise.all([
+    obtenerCupones(),
+    obtenerProductosAdmin(),
+  ]);
+
+  return (
+    <div className="space-y-8">
+      <GestionCupones cuponesInicial={cupones} />
+      <GestionOfertas productos={productos} />
+    </div>
+  );
 }

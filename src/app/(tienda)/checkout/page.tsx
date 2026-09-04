@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/contexto/auth";
@@ -17,6 +17,7 @@ import { formatearPrecio } from "@/lib/util";
 import { API_URL } from "@/lib/api";
 import { PagoRecurrente } from "@/components/tienda/PagoRecurrente";
 import { DEPARTAMENTOS_GUATEMALA } from "@/lib/departamentos";
+import { obtenerCuponesActivos } from "@/lib/servicios/catalogo";
 import type { Cupon, MetodoPago, Orden } from "@/lib/tipos";
 
 const ENVIO = 45;
@@ -43,6 +44,7 @@ export default function PaginaCheckout() {
   const [descuento, setDescuento] = useState(0);
   const [cuponError, setCuponError] = useState("");
   const [aplicandoCupon, setAplicandoCupon] = useState(false);
+  const [cuponesDisponibles, setCuponesDisponibles] = useState<Cupon[]>([]);
 
   // Estado del pago con Recurrente (tarjeta).
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
@@ -50,6 +52,11 @@ export default function PaginaCheckout() {
 
   const envio = subtotal >= UMBRAL_ENVIO_GRATIS ? 0 : ENVIO;
   const total = subtotal - descuento + envio;
+
+  // Carga los cupones disponibles para mostrarlos en un desplegable.
+  useEffect(() => {
+    void obtenerCuponesActivos().then((cupones) => setCuponesDisponibles(cupones));
+  }, []);
 
   // -------- GATE: los usuarios de staff no pueden realizar pedidos --------
   if (autenticado && esStaff) {
@@ -128,18 +135,19 @@ export default function PaginaCheckout() {
   }
 
   // -------- Valida y aplica el cupón --------
-  async function aplicarCupon() {
-    if (!cuponCodigo.trim()) return;
+  async function aplicarCupon(codigo: string) {
+    if (!codigo.trim()) return;
     setCuponError("");
     setAplicandoCupon(true);
     try {
       const res = await fetch(`${API_URL}/api/catalogo/cupones/validar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigo: cuponCodigo.trim(), subtotal }),
+        body: JSON.stringify({ codigo: codigo.trim(), subtotal }),
       });
       const data = await res.json();
       if (data.valido) {
+        setCuponCodigo(codigo.trim());
         setCuponAplicado(data.cupon);
         setDescuento(data.descuento);
       } else {
@@ -434,7 +442,7 @@ export default function PaginaCheckout() {
               >
                 <span className="text-2xl">💳</span>
                 <span>
-                  <span className="block font-semibold text-marron-900">Tarjeta (Recurrente)</span>
+                  <span className="block font-semibold text-marron-900">Crédito/Débito</span>
                   <span className="text-sm text-marron-500">
                     Pago seguro con tarjeta de crédito o débito.
                   </span>
@@ -492,23 +500,22 @@ export default function PaginaCheckout() {
                 </div>
               ) : (
                 <div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={cuponCodigo}
-                      onChange={(e) => setCuponCodigo(e.target.value.toUpperCase())}
-                      placeholder="Código de cupón"
-                      className="w-full rounded-lg border border-marron-200 px-3 py-2 text-sm uppercase outline-none focus:border-marron-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={aplicarCupon}
-                      disabled={aplicandoCupon}
-                      className="shrink-0 rounded-lg bg-marron-100 px-4 py-2 text-sm font-semibold text-marron-700 hover:bg-marron-200 disabled:opacity-60"
-                    >
-                      {aplicandoCupon ? "…" : "Aplicar"}
-                    </button>
-                  </div>
+                  <select
+                    value={cuponCodigo}
+                    onChange={(e) => aplicarCupon(e.target.value)}
+                    disabled={aplicandoCupon}
+                    className="w-full rounded-lg border border-marron-200 bg-white px-3 py-2 text-sm outline-none focus:border-marron-500"
+                  >
+                    <option value="">Seleccionar cupón…</option>
+                    {cuponesDisponibles.map((c) => (
+                      <option key={c.id} value={c.codigo}>
+                        {c.codigo} ·{" "}
+                        {c.tipoDescuento === "porcentaje"
+                          ? `${c.valorDescuento}%`
+                          : formatearPrecio(c.valorDescuento)}
+                      </option>
+                    ))}
+                  </select>
                   {cuponError && (
                     <p className="mt-1 text-xs font-medium text-red-600">{cuponError}</p>
                   )}

@@ -56,3 +56,13 @@ export class RestablecerContrasenaDto {
   @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres.' })
   nuevaContrasena!: string;
 }
+
+// Verificación de correo con código de 6 dígitos.
+export class VerificarCorreoDto {
+  @IsEmail({}, { message: 'El correo no es válido.' })
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'El código es obligatorio.' })
+  codigo!: string;
+}

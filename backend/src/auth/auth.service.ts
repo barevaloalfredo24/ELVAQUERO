@@ -89,7 +89,12 @@ export class AuthService {
   // Registra un usuario nuevo (queda SIN verificar hasta confirmar correo).
   async registrar(
     dto: RegistroDto,
-  ): Promise<{ token: string; usuario: UsuarioDTO }> {
+  ): Promise<{
+    token: string;
+    usuario: UsuarioDTO;
+    requiereVerificacion: boolean;
+    codigoDev?: string;
+  }> {
     const email = dto.email.trim().toLowerCase();
     const existente = await this.prisma.usuarios.findUnique({
       where: { correo: email },
@@ -109,10 +114,78 @@ export class AuthService {
       },
     });
 
+    // Genera un código de verificación de 6 dígitos (válido 15 min).
+    const codigo = String(randomInt(100000, 1000000));
+    const expiracion = new Date(Date.now() + 15 * 60 * 1000);
+    await this.prisma.verificaciones_correo.create({
+      data: {
+        usuario_id: usuario.id,
+        token: codigo,
+        fecha_expiracion: expiracion,
+      },
+    });
+
+    // Envía el código por correo (Resend); si falla, se registra en consola.
+    const enviado = await this.mail.enviar(
+      email,
+      'Verifica tu correo - Curiosidades El Vaquero',
+      `<div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2>Verifica tu correo</h2>
+        <p>Tu código de verificación es:</p>
+        <p style="font-size:28px;font-weight:bold;letter-spacing:6px">${codigo}</p>
+        <p>Este código vence en 15 minutos.</p>
+      </div>`,
+    );
+    if (!enviado) {
+      console.log(`[verificar-correo] Código para ${email}: ${codigo}`);
+    }
+
     return {
       token: this.firmarToken(usuario.id),
       usuario: await this.aUsuarioDTO(usuario),
+      requiereVerificacion: true,
+      codigoDev: enviado ? undefined : codigo,
     };
+  }
+
+  // Verifica el correo con el código enviado.
+  async verificarCorreo(dto: {
+    email: string;
+    codigo: string;
+  }): Promise<{ ok: boolean }> {
+    const email = dto.email.trim().toLowerCase();
+    const usuario = await this.prisma.usuarios.findUnique({
+      where: { correo: email },
+    });
+    if (!usuario) {
+      throw new UnauthorizedException('Código inválido o expirado.');
+    }
+
+    const registro = await this.prisma.verificaciones_correo.findFirst({
+      where: {
+        usuario_id: usuario.id,
+        token: dto.codigo.trim(),
+        fecha_verificacion: null,
+        fecha_expiracion: { gte: new Date() },
+      },
+      orderBy: { fecha_creacion: 'desc' },
+    });
+    if (!registro) {
+      throw new UnauthorizedException('Código inválido o expirado.');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.usuarios.update({
+        where: { id: usuario.id },
+        data: { correo_verificado: true },
+      }),
+      this.prisma.verificaciones_correo.update({
+        where: { id: registro.id },
+        data: { fecha_verificacion: new Date() },
+      }),
+    ]);
+
+    return { ok: true };
   }
 
   // Inicia sesión validando email y contraseña.
@@ -132,6 +205,11 @@ export class AuthService {
     }
     if (!usuario.esta_activo) {
       throw new UnauthorizedException('La cuenta está desactivada.');
+    }
+    if (!usuario.correo_verificado) {
+      throw new UnauthorizedException(
+        'Debes verificar tu correo antes de iniciar sesión.',
+      );
     }
 
     return {

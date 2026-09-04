@@ -126,9 +126,12 @@ export class OrdenesService {
         );
       }
       const at = (v.atributos ?? {}) as { talla?: string; color?: string };
-      const precio = v.precio_alternativo
+      // Precio base y descuento por oferta del producto.
+      const base = v.precio_alternativo
         ? Number(v.precio_alternativo)
         : Number(v.productos.precio_base);
+      const descuento = Number(v.productos.descuento_porcentaje ?? 0);
+      const precio = Math.round(base * (1 - descuento / 100) * 100) / 100;
       lineas.push({
         varianteId: v.id,
         productoId: v.producto_id,
@@ -240,10 +243,24 @@ export class OrdenesService {
               stock_al_disparar: v.cantidad_stock,
             },
           });
+          await tx.notificaciones_admin.create({
+            data: {
+              tipo: 'stock_bajo',
+              mensaje: `Stock bajo para "${l.nombre}" (${l.sku}): quedan ${v.cantidad_stock} unidades.`,
+            },
+          });
         }
       }
 
       return creada;
+    });
+
+    // Notifica al admin que llegó un nuevo pedido.
+    await this.prisma.notificaciones_admin.create({
+      data: {
+        tipo: 'nueva_orden',
+        mensaje: `Nuevo pedido ${numero} de ${usuario.nombre_completo}.`,
+      },
     });
 
     // Guarda el teléfono del usuario si aún no lo tiene.

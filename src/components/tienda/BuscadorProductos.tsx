@@ -28,12 +28,12 @@ export function BuscadorProductos({
   const [abierto, setAbierto] = useState(false);
   const temporizador = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Debounce: busca 250ms después de la última tecla.
+  // Debounce: busca 200ms después de la última tecla.
   function alCambiar(valor: string) {
     setTermino(valor);
     if (temporizador.current) clearTimeout(temporizador.current);
 
-    if (!valor.trim()) {
+    if (valor.trim().length < 2) {
       setResultados([]);
       setAbierto(false);
       return;
@@ -45,7 +45,7 @@ export function BuscadorProductos({
       );
       setResultados(datos ?? []);
       setAbierto(true);
-    }, 250);
+    }, 200);
   }
 
   // Al enviar el formulario, navega al catálogo con la búsqueda.

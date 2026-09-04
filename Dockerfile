@@ -1,9 +1,9 @@
 # =====================================================================
 # DOCKERFILE - FRONTEND (Next.js)
 # ---------------------------------------------------------------------
-# Build multi-etapa con output "standalone" para una imagen final mínima.
-# NEXT_PUBLIC_API_URL se define en build (vacía => el cliente usa rutas
-# relativas /api, resueltas por nginx en producción).
+# Build multi-etapa: compila con npm run build y corre con `next start`
+# en una imagen con solo dependencias de producción.
+# NEXT_PUBLIC_* se inyecta en build time.
 # =====================================================================
 
 # ---- 1) Dependencias ----
@@ -34,12 +34,14 @@ ENV HOSTNAME=0.0.0.0
 
 RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
 
-# Copia solo el resultado standalone + estáticos + public.
-COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
+COPY --from=build --chown=nextjs:nodejs /app/.next ./.next
 COPY --from=build --chown=nextjs:nodejs /app/public ./public
+COPY --chown=nextjs:nodejs next.config.mjs ./
 
 USER nextjs
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["node_modules/.bin/next", "start"]

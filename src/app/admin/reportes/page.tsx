@@ -1,11 +1,11 @@
 // =====================================================================
 // PÁGINA ADMIN: REPORTES
 // ---------------------------------------------------------------------
-// Componente de servidor que carga el reporte inicial y las categorías
-// y los pasa al componente cliente de gráficas.
+// Componente de servidor que carga el reporte inicial, las categorías y
+// los productos más vendidos, y los pasa al componente cliente.
 // =====================================================================
 
-import { obtenerReporte } from "@/lib/servicios/admin";
+import { obtenerReporte, obtenerEstadisticas } from "@/lib/servicios/admin";
 import { obtenerCategorias } from "@/lib/servicios/catalogo";
 import { PanelReportes } from "@/components/admin/PanelReportes";
 import type { ReporteAdmin } from "@/lib/tipos";
@@ -20,10 +20,17 @@ const REPORTE_VACIO: ReporteAdmin = {
 };
 
 export default async function PaginaReportes() {
-  const [reporte, categorias] = await Promise.all([
+  const [reporte, categorias, stats] = await Promise.all([
     obtenerReporte(),
     obtenerCategorias(),
+    obtenerEstadisticas(),
   ]);
 
-  return <PanelReportes reporteInicial={reporte ?? REPORTE_VACIO} categorias={categorias} />;
+  return (
+    <PanelReportes
+      reporteInicial={reporte ?? REPORTE_VACIO}
+      categorias={categorias}
+      masVendidos={stats?.productosMasVendidos ?? []}
+    />
+  );
 }

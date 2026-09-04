@@ -15,7 +15,7 @@ import { BotonGoogle } from "@/components/tienda/BotonGoogle";
 import { CampoContrasena } from "@/components/tienda/CampoContrasena";
 
 export default function PaginaRegistro() {
-  const { registrar, iniciarSesionGoogle } = useAuth();
+  const { registrar, iniciarSesionGoogle, verificarCorreo } = useAuth();
   const router = useRouter();
 
   const [nombre, setNombre] = useState("");
@@ -24,6 +24,11 @@ export default function PaginaRegistro() {
   const [confirmacion, setConfirmacion] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+
+  // Paso de verificación de correo.
+  const [paso, setPaso] = useState<"registro" | "verificar">("registro");
+  const [emailRegistrado, setEmailRegistrado] = useState("");
+  const [codigo, setCodigo] = useState("");
 
   async function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -34,11 +39,34 @@ export default function PaginaRegistro() {
       return;
     }
 
+    setCargando(true);
+    setError("");
     const resultado = await registrar({ nombre, email, password });
+    setCargando(false);
+
+    if (resultado.requiereVerificacion) {
+      setEmailRegistrado(resultado.email ?? email);
+      setPaso("verificar");
+      return;
+    }
     if (resultado.ok) {
       router.push("/cuenta");
     } else {
       setError(resultado.mensaje ?? "No se pudo crear la cuenta.");
+    }
+  }
+
+  // Envía el código de verificación recibido por correo.
+  async function verificar(evento: React.FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    setCargando(true);
+    setError("");
+    const resultado = await verificarCorreo(emailRegistrado, codigo);
+    setCargando(false);
+    if (resultado.ok) {
+      router.push("/login?verificado=1");
+    } else {
+      setError(resultado.mensaje ?? "No se pudo verificar el correo.");
     }
   }
 
@@ -50,6 +78,54 @@ export default function PaginaRegistro() {
     setCargando(false);
     if (resultado.ok) router.push("/cuenta");
     else setError(resultado.mensaje ?? "No se pudo iniciar sesión con Google.");
+  }
+
+  // ---------- PASO: VERIFICAR CORREO ----------
+  if (paso === "verificar") {
+    return (
+      <div className="contenedor flex justify-center py-12">
+        <div className="w-full max-w-md rounded-2xl border border-marron-100 bg-white p-8 shadow-sm">
+          <div className="mb-6 text-center">
+            <span className="text-4xl">📬</span>
+            <h1 className="mt-2 font-display text-2xl font-bold text-marron-900">Verifica tu correo</h1>
+            <p className="mt-1 text-sm text-marron-500">
+              Enviamos un código de 6 dígitos a <strong>{emailRegistrado}</strong>.
+            </p>
+          </div>
+          <form onSubmit={verificar} className="space-y-4">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-marron-700">Código de verificación</span>
+              <input
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                required
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                className="w-full rounded-lg border border-marron-200 px-3 py-2 text-center text-lg tracking-[0.5em] outline-none focus:border-marron-500"
+              />
+            </label>
+            {error && (
+              <p className="rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={cargando}
+              className="w-full rounded-full bg-marron-700 py-3 font-semibold text-white transition hover:bg-marron-800 disabled:opacity-60"
+            >
+              {cargando ? "Verificando…" : "Verificar correo"}
+            </button>
+          </form>
+          <button
+            type="button"
+            onClick={() => setPaso("registro")}
+            className="mt-4 w-full text-center text-sm font-medium text-marron-600 hover:underline"
+          >
+            Volver al registro
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

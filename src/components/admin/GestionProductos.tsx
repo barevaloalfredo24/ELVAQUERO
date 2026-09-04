@@ -43,13 +43,14 @@ export function GestionProductos({
   const [descripcion, setDescripcion] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
   const [precioBase, setPrecioBase] = useState("");
+  const [umbralStockBajo, setUmbralStockBajo] = useState("5");
   const [variantes, setVariantes] = useState<FilaVariante[]>([]);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
   const [cargando, setCargando] = useState(false);
   const [subiendo, setSubiendo] = useState(false);
-  const [imagenNueva, setImagenNueva] = useState<File | null>(null);
-  const [previewNueva, setPreviewNueva] = useState<string | null>(null);
+  const [imagenesNuevas, setImagenesNuevas] = useState<File[]>([]);
+  const [previewsNuevas, setPreviewsNuevas] = useState<string[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const archivoRef = useRef<HTMLInputElement>(null);
 
@@ -114,12 +115,22 @@ export function GestionProductos({
     await recargar();
   }
 
-  // Al seleccionar una imagen para un producto nuevo, guarda el archivo y su vista previa.
-  function manejarImagenNueva(evento: React.ChangeEvent<HTMLInputElement>) {
-    const archivo = evento.target.files?.[0];
-    if (!archivo) return;
-    setImagenNueva(archivo);
-    setPreviewNueva(URL.createObjectURL(archivo));
+  // Al seleccionar imágenes para un producto nuevo, acumula archivos y vistas previas.
+  function manejarImagenesNuevas(evento: React.ChangeEvent<HTMLInputElement>) {
+    const archivos = Array.from(evento.target.files ?? []);
+    if (archivos.length === 0) return;
+    setImagenesNuevas((prev) => [...prev, ...archivos]);
+    setPreviewsNuevas((prev) => [
+      ...prev,
+      ...archivos.map((a) => URL.createObjectURL(a)),
+    ]);
+    if (archivoRef.current) archivoRef.current.value = "";
+  }
+
+  // Quita una imagen pendiente de subir (modo creación).
+  function quitarImagenNueva(i: number) {
+    setImagenesNuevas((prev) => prev.filter((_, idx) => idx !== i));
+    setPreviewsNuevas((prev) => prev.filter((_, idx) => idx !== i));
   }
 
   // Elimina una imagen del producto.
@@ -146,9 +157,10 @@ export function GestionProductos({
     setDescripcion("");
     setCategoriaId("");
     setPrecioBase("");
+    setUmbralStockBajo("5");
     setVariantes([{ talla: "", color: "", stock: "", precio: "" }]);
-    setImagenNueva(null);
-    setPreviewNueva(null);
+    setImagenesNuevas([]);
+    setPreviewsNuevas([]);
     setError("");
     setFormAbierto(true);
   }
@@ -161,6 +173,7 @@ export function GestionProductos({
     setDescripcion(p.descripcion);
     setCategoriaId(p.categoriaId ?? "");
     setPrecioBase(String(p.precio));
+    setUmbralStockBajo(String(p.umbralStock));
     setVariantes(
       p.variantes.length > 0
         ? p.variantes.map((v) => ({
@@ -211,6 +224,7 @@ export function GestionProductos({
       descripcion,
       categoriaId: categoriaId || undefined,
       precioBase: Number(precioBase) || 0,
+      umbralStockBajo: Number(umbralStockBajo) || 5,
       variantes: variantesLimpias,
     };
 
@@ -238,9 +252,11 @@ export function GestionProductos({
     setCargando(false);
 
     if (ok) {
-      // Sube la imagen adjunta (solo en creación).
-      if (nuevoId && imagenNueva) {
-        await subirImagenAProducto(nuevoId, imagenNueva);
+      // Sube las imágenes adjuntas (solo en creación).
+      if (nuevoId && imagenesNuevas.length > 0) {
+        for (const archivo of imagenesNuevas) {
+          await subirImagenAProducto(nuevoId, archivo);
+        }
       }
       setFormAbierto(false);
       setMensaje(editando ? "Producto actualizado." : "Producto creado.");
@@ -255,6 +271,16 @@ export function GestionProductos({
     if (!confirm(`¿Desactivar "${p.nombre}"?`)) return;
     await peticionAuth(`/api/admin/productos/${p.id}`, token!, { method: "DELETE" });
     setMensaje("Producto desactivado.");
+    await recargar();
+  }
+
+  // Oculta/muestra el producto en el catálogo (sin eliminarlo).
+  async function alternarVisibilidad(p: Producto) {
+    await peticionAuth(`/api/admin/productos/${p.id}`, token!, {
+      method: "PATCH",
+      body: JSON.stringify({ estaActivo: !p.estaActivo }),
+    });
+    setMensaje(p.estaActivo ? "Producto oculto del catálogo." : "Producto visible nuevamente.");
     await recargar();
   }
 
@@ -354,6 +380,19 @@ export function GestionProductos({
                 required
                 className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
               />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-marron-700">Umbral de stock bajo</span>
+              <input
+                type="number"
+                min="0"
+                value={umbralStockBajo}
+                onChange={(e) => setUmbralStockBajo(e.target.value)}
+                className="w-full rounded-lg border border-marron-200 px-3 py-2 outline-none focus:border-marron-500"
+              />
+              <span className="mt-1 block text-xs text-marron-400">
+                Dispara alerta y notificación cuando el stock baja a este valor.
+              </span>
             </label>
           </div>
 
@@ -455,21 +494,36 @@ export function GestionProductos({
               </>
             ) : (
               <div className="flex flex-wrap items-center gap-3">
-                {previewNueva && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={previewNueva}
-                    alt="Vista previa"
-                    className="h-24 w-24 rounded-lg object-cover"
-                  />
-                )}
+                {previewsNuevas.map((preview, i) => (
+                  <div key={i} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={preview}
+                      alt="Vista previa"
+                      className="h-24 w-24 rounded-lg object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => quitarImagenNueva(i)}
+                      className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs font-bold text-white hover:bg-red-700"
+                      title="Quitar imagen"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={manejarImagenNueva}
+                  multiple
+                  onChange={manejarImagenesNuevas}
                   className="text-sm text-marron-600 file:mr-3 file:rounded-full file:border-0 file:bg-marron-700 file:px-4 file:py-1.5 file:text-sm file:font-semibold file:text-white hover:file:bg-marron-800"
                 />
-                {imagenNueva && <span className="text-sm text-marron-500">{imagenNueva.name}</span>}
+                {imagenesNuevas.length > 0 && (
+                  <span className="text-sm text-marron-500">
+                    {imagenesNuevas.length} imagen(es) por subir
+                  </span>
+                )}
               </div>
             )}
           </div>
@@ -523,7 +577,16 @@ export function GestionProductos({
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-3">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => alternarVisibilidad(p)}
+                        title={p.estaActivo ? "Ocultar del catálogo" : "Mostrar en el catálogo"}
+                        aria-label={p.estaActivo ? "Ocultar del catálogo" : "Mostrar en el catálogo"}
+                        className={`text-lg leading-none ${p.estaActivo ? "text-marron-500 hover:text-marron-800" : "text-red-500 hover:text-red-700"}`}
+                      >
+                        {p.estaActivo ? "👁" : "🚫"}
+                      </button>
                       <Link
                         href={`/producto/${p.id}`}
                         className="font-medium text-marron-600 hover:underline"

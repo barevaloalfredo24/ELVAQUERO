@@ -142,10 +142,10 @@ export class AdminService {
     }));
   }
 
-  // Lista los perfiles de staff (rol 'staff').
+  // Lista los perfiles de personal (rol 'admin' y 'staff').
   async listarStaff() {
     const staff = await this.prisma.usuarios.findMany({
-      where: { rol: 'staff' },
+      where: { rol: { in: ['admin', 'staff'] } },
       orderBy: { fecha_creacion: 'desc' },
     });
     return staff.map((u) => ({
@@ -153,6 +153,7 @@ export class AdminService {
       nombre: u.nombre_completo,
       email: u.correo,
       telefono: u.telefono,
+      rol: u.rol,
       estaActivo: u.esta_activo,
       fechaRegistro: u.fecha_creacion.toISOString(),
     }));
@@ -183,9 +184,33 @@ export class AdminService {
     return productos.filter((p) => p.stockTotal <= p.umbralStock);
   }
 
-  // Lista todos los productos (para la tabla de administración).
+  // Lista todos los productos (para la tabla de administración, incluye ocultos).
   listarProductos(): Promise<ProductoDTO[]> {
-    return this.catalogo.listarProductos();
+    return this.catalogo.listarTodosLosProductos();
+  }
+
+  // Lista las notificaciones del admin (más recientes primero).
+  async listarNotificaciones() {
+    const notificaciones = await this.prisma.notificaciones_admin.findMany({
+      orderBy: { fecha_creacion: 'desc' },
+      take: 30,
+    });
+    return notificaciones.map((n) => ({
+      id: n.id,
+      tipo: n.tipo,
+      mensaje: n.mensaje,
+      estaLeida: n.esta_leida,
+      fechaCreacion: n.fecha_creacion.toISOString(),
+    }));
+  }
+
+  // Marca todas las notificaciones como leídas.
+  async marcarNotificacionesLeidas() {
+    await this.prisma.notificaciones_admin.updateMany({
+      where: { esta_leida: false },
+      data: { esta_leida: true },
+    });
+    return { ok: true };
   }
 
   // Calcula las estadísticas del panel.

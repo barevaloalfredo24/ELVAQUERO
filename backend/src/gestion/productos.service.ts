@@ -30,14 +30,19 @@ export class ProductosGestionService {
   }
 
   // Datos base de una variante (sin producto_id; se añade donde haga falta).
-  private datosVariante(slug: string, precioBase: number, v: VarianteDto) {
+  private datosVariante(
+    slug: string,
+    precioBase: number,
+    v: VarianteDto,
+    umbralStockBajo: number,
+  ) {
     return {
       sku: this.generarSku(slug, v.talla, v.color),
       atributos: { talla: v.talla, color: v.color },
       precio_alternativo:
         v.precio !== undefined && v.precio !== precioBase ? v.precio : null,
       cantidad_stock: v.stock,
-      umbral_stock_bajo: 5,
+      umbral_stock_bajo: umbralStockBajo,
       esta_activo: true,
     };
   }
@@ -51,6 +56,7 @@ export class ProductosGestionService {
     if (existente)
       throw new ConflictException('Ya existe un producto con ese slug.');
 
+    const umbralStockBajo = dto.umbralStockBajo ?? 5;
     const id = randomUUID();
     await this.prisma.productos.create({
       data: {
@@ -60,10 +66,11 @@ export class ProductosGestionService {
         descripcion: dto.descripcion ?? null,
         categoria_id: dto.categoriaId ?? null,
         precio_base: dto.precioBase,
+        descuento_porcentaje: dto.descuentoPorcentaje || null,
         esta_activo: dto.estaActivo ?? true,
         variantes_producto: {
           create: dto.variantes.map((v) =>
-            this.datosVariante(slug, dto.precioBase, v),
+            this.datosVariante(slug, dto.precioBase, v, umbralStockBajo),
           ),
         },
       },
@@ -85,6 +92,9 @@ export class ProductosGestionService {
     if (dto.descripcion !== undefined) data.descripcion = dto.descripcion;
     if (dto.categoriaId !== undefined) data.categoria_id = dto.categoriaId;
     if (dto.precioBase !== undefined) data.precio_base = dto.precioBase;
+    if (dto.descuentoPorcentaje !== undefined) {
+      data.descuento_porcentaje = dto.descuentoPorcentaje || null;
+    }
     if (dto.estaActivo !== undefined) data.esta_activo = dto.estaActivo;
 
     if (dto.slug !== undefined) {
@@ -105,13 +115,14 @@ export class ProductosGestionService {
       // Si vienen variantes nuevas, desactiva las actuales y crea las nuevas.
       if (dto.variantes && dto.variantes.length > 0) {
         const precioBase = (dto.precioBase ?? producto.precio_base) as number;
+        const umbralStockBajo = dto.umbralStockBajo ?? 5;
         await tx.variantes_producto.updateMany({
           where: { producto_id: id, esta_activo: true },
           data: { esta_activo: false },
         });
         await tx.variantes_producto.createMany({
           data: dto.variantes.map((v) => ({
-            ...this.datosVariante(producto.slug, precioBase, v),
+            ...this.datosVariante(producto.slug, precioBase, v, umbralStockBajo),
             producto_id: id,
           })),
         });

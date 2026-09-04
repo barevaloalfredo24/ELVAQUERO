@@ -14,7 +14,7 @@ import {
   obtenerProductos,
   obtenerProductosRelacionados,
 } from "@/lib/servicios/catalogo";
-import { formatearPrecio } from "@/lib/util";
+import { formatearPrecio, precioConDescuento } from "@/lib/util";
 import { GaleriaProducto } from "@/components/tienda/GaleriaProducto";
 import { SelectorProducto } from "@/components/tienda/SelectorProducto";
 import { BotonDeseo } from "@/components/tienda/BotonDeseo";
@@ -96,18 +96,18 @@ export default async function PaginaProducto({
           {/* Precio. */}
           <div className="flex items-baseline gap-3">
             <span className="text-3xl font-bold text-marron-800">
-              {formatearPrecio(producto.precio)}
+              {formatearPrecio(precioConDescuento(producto.precio, producto.descuentoActivo))}
             </span>
-            {producto.precioAnterior && (
-              <span className="text-lg text-marron-400 line-through">
-                {formatearPrecio(producto.precioAnterior)}
-              </span>
-            )}
-            {producto.enOferta && (
-              <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white">
-                Oferta
-              </span>
-            )}
+            {producto.descuentoActivo ? (
+              <>
+                <span className="text-lg text-marron-400 line-through">
+                  {formatearPrecio(producto.precio)}
+                </span>
+                <span className="rounded-full bg-red-600 px-2.5 py-1 text-xs font-bold text-white">
+                  -{producto.descuentoActivo}%
+                </span>
+              </>
+            ) : null}
           </div>
 
           {/* Descripción. */}
