@@ -19,9 +19,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { OrdenesService } from '../ordenes/ordenes.service';
 import { CrearOrdenDto } from '../ordenes/dto';
 
-const BASE_URL = 'https://app.recurrente.com/api';
-const FRONTEND_URL = process.env.FRONTEND_URL ?? 'http://localhost:3000';
-
 // Forma de la respuesta de la API de Recurrente (checkout / error).
 interface RecurrenteResponse {
   id?: string;
@@ -43,6 +40,21 @@ export class PagosService {
     return this.config.get<string>('RECURRENTE_SECRET_KEY') ?? '';
   }
 
+  private get signingSecret(): string {
+    return this.config.get<string>('RECURRENTE_SIGNING_SECRET') ?? '';
+  }
+
+  private get baseUrl(): string {
+    return (
+      this.config.get<string>('RECURRENTE_API_URL') ??
+      'https://app.recurrente.com/api'
+    );
+  }
+
+  private get frontendUrl(): string {
+    return this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000';
+  }
+
   // Crea la orden y el checkout de Recurrente para pago con tarjeta.
   async crearCheckoutRecurrente(dto: CrearOrdenDto, usuarioId: string) {
     // 1) Crea la orden (método tarjeta → estado pendiente + pago pendiente).
@@ -53,7 +65,7 @@ export class PagosService {
 
     // 2) Crea el checkout en Recurrente (monto total en centavos).
     const totalCentavos = Math.round(orden.total * 100);
-    const respuesta = await fetch(`${BASE_URL}/checkouts`, {
+    const respuesta = await fetch(`${this.baseUrl}/checkouts`, {
       method: 'POST',
       headers: {
         'X-SECRET-KEY': this.secretKey,
@@ -71,8 +83,8 @@ export class PagosService {
             available_installments: [],
           },
         ],
-        success_url: `${FRONTEND_URL}/gracias?orden=${orden.id}`,
-        cancel_url: `${FRONTEND_URL}/checkout`,
+        success_url: `${this.frontendUrl}/gracias?orden=${orden.id}`,
+        cancel_url: `${this.frontendUrl}/checkout`,
       }),
     });
     const data = (await respuesta.json()) as unknown as RecurrenteResponse;
@@ -109,7 +121,7 @@ export class PagosService {
       throw new NotFoundException('No hay un pago pendiente para esta orden.');
 
     const respuesta = await fetch(
-      `${BASE_URL}/checkouts/${pago.id_intento_pago_stripe}`,
+      `${this.baseUrl}/checkouts/${pago.id_intento_pago_stripe}`,
       {
         headers: { 'X-SECRET-KEY': this.secretKey },
       },
@@ -126,8 +138,7 @@ export class PagosService {
 
   // Procesa el webhook de Recurrente (verifica la firma con Svix).
   async manejarWebhook(rawBody: Buffer, headers: Record<string, string>) {
-    const signingSecret =
-      this.config.get<string>('RECURRENTE_SIGNING_SECRET') ?? '';
+    const signingSecret = this.signingSecret;
 
     let payload: Record<string, unknown>;
     try {
