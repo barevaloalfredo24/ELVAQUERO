@@ -30,11 +30,20 @@ export class PagosController {
   }
 
   // POST /api/recurrente/webhook  (público, verificado por firma)
-  @Post('recurrente/webhook')
-  webhook(@Req() req: Request & { rawBody?: Buffer }) {
-    return this.pagos.manejarWebhook(
-      req.rawBody ?? Buffer.from(''),
-      (req.headers ?? {}) as unknown as Record<string, string>,
-    );
-  }
-}
+ // POST /api/recurrente/webhook  (público, verificado por firma) 
+
+  @Post('recurrente/webhook') 
+
+  webhook(@Req() req: Request & { rawBody?: Buffer }) { 
+
+    return this.pagos.manejarWebhook( 
+
+      req.rawBody ?? Buffer.from(''), 
+
+      (req.headers ?? {}) as unknown as Record<string, string>, 
+
+    ); 
+
+  } 
+
+} 
