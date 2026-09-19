@@ -21,11 +21,13 @@ import { BotonDeseo } from "@/components/tienda/BotonDeseo";
 import { TarjetaProducto } from "@/components/tienda/TarjetaProducto";
 import { ResenasProducto } from "@/components/tienda/ResenasProducto";
 
+
 // Pre-genera las páginas de todos los productos en el build (SSG).
 export async function generateStaticParams() {
   const productos = await obtenerProductos();
   return productos.map((p) => ({ id: p.id }));
 }
+
 
 // Metadatos dinámicos por producto (SEO).
 export async function generateMetadata({
@@ -44,6 +46,8 @@ export default async function PaginaProducto({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+
 
   // Carga el producto; si no existe, devuelve 404.
   const producto = await obtenerProductoPorId(id);
@@ -70,6 +74,8 @@ export default async function PaginaProducto({
         <span className="text-marron-800">{producto.nombre}</span>
       </nav>
 
+
+
       {/* Ficha del producto: imagen + información. */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Columna de imagen (galería con miniaturas). */}
@@ -84,6 +90,8 @@ export default async function PaginaProducto({
             <h1 className="mt-1 font-display text-3xl font-bold text-marron-900">
               {producto.nombre}
             </h1>
+
+
             {/* Calificación. */}
             <div className="mt-2 flex items-center gap-2 text-sm text-marron-500">
               <span className="text-dorado">★</span>
@@ -92,6 +100,7 @@ export default async function PaginaProducto({
               <BotonDeseo productoId={producto.id} />
             </div>
           </div>
+
 
           {/* Precio. */}
           <div className="flex items-baseline gap-3">
@@ -110,11 +119,14 @@ export default async function PaginaProducto({
             ) : null}
           </div>
 
+
+
           {/* Descripción. */}
           <p className="leading-relaxed text-marron-700">{producto.descripcion}</p>
 
           {/* Selector interactivo de variante + carrito. */}
           <SelectorProducto producto={producto} />
+
 
           {/* Notas de beneficio. */}
           <div className="mt-2 space-y-2 rounded-xl bg-marron-50 p-4 text-sm text-marron-700">
@@ -127,6 +139,8 @@ export default async function PaginaProducto({
 
       {/* Reseñas y calificación (clientes). */}
       <ResenasProducto productoId={producto.id} />
+
+      
 
       {/* Productos relacionados. */}
       {relacionados.length > 0 && (

@@ -39,6 +39,7 @@ export default function PaginaRecuperar() {
       });
       const data = await res.json();
       if (res.ok) {
+
         // En desarrollo el backend devuelve el código para pruebas.
         if (data.codigoDev) setCodigoDev(data.codigoDev);
         setMensaje("Se generó un código de recuperación. Revísalo y continúa.");
@@ -52,6 +53,7 @@ export default function PaginaRecuperar() {
       setCargando(false);
     }
   }
+
 
   // Paso 2: restablece la contraseña con el código.
   async function restablecer(evento: React.FormEvent<HTMLFormElement>) {
@@ -192,6 +194,8 @@ export default function PaginaRecuperar() {
               onClick={() => setPaso("email")}
               className="w-full text-center text-sm font-medium text-marron-600 hover:underline"
             >
+
+
               ← Volver a enviar código
             </button>
           </form>

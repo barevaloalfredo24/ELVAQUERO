@@ -63,6 +63,10 @@ export default async function PaginaCatalogo({
       </div>
 
       <div className="flex flex-col gap-8 lg:flex-row">
+
+
+
+      
         {/* ============ LISTA DE CATEGORÍAS (ESCRITORIO) ============ */}
         <aside className="hidden w-60 shrink-0 lg:block">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-marron-500">

@@ -75,6 +75,7 @@ export default async function PaginaInicio() {
         </div>
       </section>
 
+
       {/* ===================== CUPONES ACTIVOS ===================== */}
       {cupones.length > 0 && (
         <section className="contenedor py-10">
@@ -112,6 +113,7 @@ export default async function PaginaInicio() {
           </div>
         </section>
       )}
+
 
       {/* ===================== CATEGORÍAS ===================== */}
       <section className="contenedor py-12">
@@ -155,6 +157,9 @@ export default async function PaginaInicio() {
         </div>
       </section>
 
+
+
+
       {/* ===================== NOVEDADES ===================== */}
       <section className="bg-marron-50 py-12">
         <div className="contenedor">
@@ -174,6 +179,8 @@ export default async function PaginaInicio() {
           </div>
         </div>
       </section>
+
+
 
       {/* ===================== CTA FINAL ===================== */}
       <section className="contenedor py-12">

@@ -81,6 +81,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
+
+
           {/* Navegación (filtrada por rol). */}
           <nav className="flex-1 space-y-1 px-3 py-4">
             {enlacesVisibles.map((e) => (
@@ -120,6 +122,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
+
+
       {/* Fondo oscuro al abrir el cajón en móvil. */}
       {abierto && (
         <div
@@ -127,6 +131,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           onClick={() => setAbierto(false)}
         />
       )}
+
+
+
 
       {/* ============ CONTENIDO PRINCIPAL ============ */}
       <div className="flex min-w-0 flex-1 flex-col lg:pl-64">
@@ -145,6 +152,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <h1 className="font-display text-lg font-bold text-marron-900">
             {enlacesVisibles.find((e) => esActivo(e.href))?.etiqueta ?? "Panel"}
           </h1>
+
+
+
           {/* Usuario conectado + notificaciones. */}
           <div className="ml-auto flex items-center gap-2">
             <CampanaNotificaciones />
@@ -158,6 +168,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </header>
+
+
+
 
         {/* Contenido de cada página del panel (o mensaje de sin permiso). */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">

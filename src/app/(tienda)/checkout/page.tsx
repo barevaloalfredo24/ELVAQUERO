@@ -95,6 +95,9 @@ export default function PaginaCheckout() {
           href="/login?redirigir=/checkout"
           className="mt-2 rounded-full bg-marron-700 px-6 py-3 font-semibold text-white transition hover:bg-marron-800"
         >
+
+
+
           Iniciar sesión
         </Link>
       </div>
@@ -113,6 +116,8 @@ export default function PaginaCheckout() {
       </div>
     );
   }
+
+
 
   // -------- VISTA DE PAGO EMBEBIDO (Recurrente) --------
   if (checkoutUrl) {
@@ -133,6 +138,9 @@ export default function PaginaCheckout() {
       </div>
     );
   }
+
+
+
 
   // -------- Valida y aplica el cupón --------
   async function aplicarCupon(codigo: string) {
@@ -162,6 +170,7 @@ export default function PaginaCheckout() {
     }
   }
 
+
   // Quita el cupón aplicado.
   function quitarCupon() {
     setCuponCodigo("");
@@ -169,6 +178,7 @@ export default function PaginaCheckout() {
     setDescuento(0);
     setCuponError("");
   }
+
 
   // -------- Genera la orden y redirige a la confirmación --------
   async function confirmarPedido(evento: React.FormEvent<HTMLFormElement>) {
@@ -257,7 +267,7 @@ export default function PaginaCheckout() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ ordenId: ordenRecurrenteId }),
-      }).catch(() => {});
+      }).catch(() => { });
     }
     vaciar();
     router.push(`/gracias?orden=${ordenRecurrenteId}`);
@@ -268,6 +278,7 @@ export default function PaginaCheckout() {
     setCheckoutUrl(null);
     setError("El pago no se completó. Intenta de nuevo.");
   }
+
 
   // Crea la orden en el backend vía POST /api/ordenes.
   async function crearOrdenEnApi(): Promise<Orden | null> {
@@ -298,6 +309,7 @@ export default function PaginaCheckout() {
       return null;
     }
   }
+
 
   // Construye una orden local (snapshot) como respaldo.
   function construirOrdenLocal(): Orden {
@@ -353,8 +365,12 @@ export default function PaginaCheckout() {
       )}
 
       <form onSubmit={confirmarPedido} className="flex flex-col gap-8 lg:flex-row">
+
+
+
         {/* ============ COLUMNA IZQUIERDA: DATOS Y PAGO ============ */}
         <div className="flex-1 space-y-6">
+
           {/* Datos de envío. */}
           <section className="rounded-xl border border-marron-100 bg-white p-5">
             <h2 className="mb-4 font-display text-lg font-bold text-marron-900">Datos de envío</h2>
@@ -407,19 +423,23 @@ export default function PaginaCheckout() {
             </div>
           </section>
 
+
+
+
           {/* Método de pago. */}
           <section className="rounded-xl border border-marron-100 bg-white p-5">
             <h2 className="mb-4 font-display text-lg font-bold text-marron-900">Método de pago</h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+
+
               {/* Opción: contra entrega. */}
               <button
                 type="button"
                 onClick={() => setMetodoPago("contra_entrega")}
-                className={`flex items-start gap-3 rounded-lg border p-4 text-left transition ${
-                  metodoPago === "contra_entrega"
-                    ? "border-marron-700 bg-marron-50"
-                    : "border-marron-200 hover:border-marron-400"
-                }`}
+                className={`flex items-start gap-3 rounded-lg border p-4 text-left transition ${metodoPago === "contra_entrega"
+                  ? "border-marron-700 bg-marron-50"
+                  : "border-marron-200 hover:border-marron-400"
+                  }`}
               >
                 <span className="text-2xl">💵</span>
                 <span>
@@ -430,15 +450,17 @@ export default function PaginaCheckout() {
                 </span>
               </button>
 
+
+
+
               {/* Opción: tarjeta (Recurrente). */}
               <button
                 type="button"
                 onClick={() => setMetodoPago("tarjeta")}
-                className={`flex items-start gap-3 rounded-lg border p-4 text-left transition ${
-                  metodoPago === "tarjeta"
-                    ? "border-marron-700 bg-marron-50"
-                    : "border-marron-200 hover:border-marron-400"
-                }`}
+                className={`flex items-start gap-3 rounded-lg border p-4 text-left transition ${metodoPago === "tarjeta"
+                  ? "border-marron-700 bg-marron-50"
+                  : "border-marron-200 hover:border-marron-400"
+                  }`}
               >
                 <span className="text-2xl">💳</span>
                 <span>
@@ -449,6 +471,8 @@ export default function PaginaCheckout() {
                 </span>
               </button>
             </div>
+
+
 
             {/* Nota según el método elegido. */}
             {metodoPago === "tarjeta" ? (
@@ -463,11 +487,17 @@ export default function PaginaCheckout() {
             )}
           </section>
 
+
+
           {/* Error de validación. */}
           {error && (
             <p className="rounded-lg bg-red-100 px-3 py-2 text-sm font-medium text-red-700">{error}</p>
           )}
         </div>
+
+
+
+
 
         {/* ============ COLUMNA DERECHA: RESUMEN ============ */}
         <aside className="lg:w-96">
@@ -483,6 +513,8 @@ export default function PaginaCheckout() {
                 </li>
               ))}
             </ul>
+
+            
             {/* Cupón de descuento. */}
             <div className="border-b border-marron-100 pb-3">
               {cuponAplicado ? (

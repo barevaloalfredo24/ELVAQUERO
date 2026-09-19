@@ -18,6 +18,8 @@ function enriquecer(lista: Producto[]): Producto[] {
   });
 }
 
+
+
 // Filtrado local (solo se usa como respaldo si la API no responde).
 function filtrarMock(filtros: FiltrosCatalogo): Producto[] {
   let resultado = [...productos];
@@ -53,6 +55,8 @@ export async function obtenerCategorias(): Promise<Categoria[]> {
   return desdeApi ?? categorias;
 }
 
+
+
 // Cupones activos y vigentes (para mostrar a los clientes).
 export async function obtenerCuponesActivos(): Promise<Cupon[]> {
   const desdeApi = await peticion<Cupon[]>("/api/catalogo/cupones");
@@ -83,11 +87,16 @@ export async function obtenerProductoPorSlug(slug: string): Promise<Producto | n
   return p ? enriquecer([p])[0] : null;
 }
 
+
+
+
 // Productos más recientes (sección "Novedades" de la portada).
 export async function obtenerProductosNovedades(): Promise<Producto[]> {
   const desdeApi = await peticion<Producto[]>("/api/catalogo/productos/novedades");
   return desdeApi ?? enriquecer(productos.slice(0, 8));
 }
+
+
 
 // Productos relacionados (misma categoría, excluyendo el actual).
 export async function obtenerProductosRelacionados(

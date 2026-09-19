@@ -25,6 +25,7 @@ const ETIQUETAS_ESTADO: Record<string, string> = {
   cancelada: "Cancelada",
 };
 
+
 // Etiqueta y estilo del estado de pago.
 function InsigniaPago({ estadoPago }: { estadoPago?: string }) {
   if (!estadoPago || estadoPago === "pendiente") return null;
@@ -45,11 +46,14 @@ function InsigniaPago({ estadoPago }: { estadoPago?: string }) {
   );
 }
 
+
+
 export default function PaginaCuenta() {
   const { usuario, autenticado, token, cerrarSesion } = useAuth();
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
   const [cargando, setCargando] = useState(true);
   const [detalleId, setDetalleId] = useState<string | null>(null);
+
 
   // Carga SOLO los pedidos del usuario autenticado desde la API.
   useEffect(() => {
@@ -99,6 +103,8 @@ export default function PaginaCuenta() {
               >
                 {usuario?.verificado ? "Correo verificado" : "Correo sin verificar"}
               </span>
+
+
               {/* Método de registro. */}
               <span className="rounded-full bg-marron-100 px-2.5 py-1 text-xs font-medium text-marron-700">
                 {usuario?.metodoRegistro === "google" ? "Registro con Google" : "Registro con correo"}
@@ -110,10 +116,14 @@ export default function PaginaCuenta() {
             onClick={cerrarSesion}
             className="self-start rounded-full border border-marron-200 px-5 py-2 text-sm font-medium text-marron-700 hover:bg-marron-50"
           >
+
+
             Cerrar sesión
           </button>
         </div>
       </section>
+
+
 
       {/* Historial de pedidos. */}
       <section className="mt-8">
@@ -129,6 +139,9 @@ export default function PaginaCuenta() {
               href="/catalogo"
               className="mt-3 inline-block rounded-full bg-marron-700 px-5 py-2 text-sm font-semibold text-white"
             >
+
+
+
               Ir de compras
             </Link>
           </div>
@@ -142,8 +155,12 @@ export default function PaginaCuenta() {
                     <span className="ml-2 text-sm text-marron-500">{formatearFecha(o.fecha)}</span>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+
+
                     {/* Estado de pago. */}
                     <InsigniaPago estadoPago={o.estadoPago} />
+
+
                     {/* Estado de la orden (envío). */}
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -162,6 +179,8 @@ export default function PaginaCuenta() {
                   {o.items.reduce((acc, l) => acc + l.cantidad, 0)} artículo(s) ·{" "}
                   {o.metodoPago === "tarjeta" ? "Tarjeta" : "Contra entrega"}
                 </p>
+
+
 
                 {/* Detalle expandible. */}
                 {detalleId === o.id && (
@@ -197,6 +216,8 @@ export default function PaginaCuenta() {
                     </div>
                   </div>
                 )}
+
+
 
                 {/* Seguimiento del envío (si ya fue enviado). */}
                 {o.numeroSeguimiento && (

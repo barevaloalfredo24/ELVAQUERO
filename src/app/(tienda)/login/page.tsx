@@ -29,6 +29,7 @@ export default function PaginaLogin() {
     router.push(destino ?? "/cuenta");
   }
 
+
   // Envío del formulario de email/contraseña.
   async function enviar(evento: React.FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -40,6 +41,7 @@ export default function PaginaLogin() {
     else setError(resultado.mensaje ?? "No se pudo iniciar sesión.");
   }
 
+
   // Login con Google (recibe el ID token desde el botón).
   async function manejarGoogle(credential: string) {
     setCargando(true);
@@ -49,6 +51,8 @@ export default function PaginaLogin() {
     if (resultado.ok) redirigir();
     else setError(resultado.mensaje ?? "No se pudo iniciar sesión con Google.");
   }
+
+
 
   return (
     <div className="contenedor flex justify-center py-12">
@@ -82,12 +86,15 @@ export default function PaginaLogin() {
             />
           </label>
 
+
+
           {/* Enlace de recuperación de contraseña. */}
           <div className="text-right">
             <Link
               href="/recuperar-contrasena"
               className="text-sm font-medium text-marron-600 hover:underline"
             >
+
               ¿Olvidaste tu contraseña?
             </Link>
           </div>
@@ -104,11 +111,14 @@ export default function PaginaLogin() {
             {cargando ? "Ingresando…" : "Iniciar sesión"}
           </button>
         </form>
+        
 
         {/* Separador. */}
         <div className="my-4 flex items-center gap-3 text-xs text-marron-400">
           <span className="h-px flex-1 bg-marron-100" /> o <span className="h-px flex-1 bg-marron-100" />
         </div>
+
+
 
         {/* Botón Google (OAuth real). */}
         <BotonGoogle onCredential={manejarGoogle} />
