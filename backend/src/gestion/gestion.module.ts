@@ -7,6 +7,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { ImagenesModule } from '../imagenes/imagenes.module';
+import { CatalogoModule } from '../catalogo/catalogo.module';
 import { CategoriasGestionController } from './categorias.controller';
 import { CategoriasGestionService } from './categorias.service';
 import { CuponesGestionController } from './cupones.controller';
@@ -19,7 +20,7 @@ import { StaffController } from './staff.controller';
 import { StaffService } from './staff.service';
 
 @Module({
-  imports: [AuthModule, ImagenesModule],
+  imports: [AuthModule, ImagenesModule, CatalogoModule],
   controllers: [
     StaffController,
     ProductosGestionController,

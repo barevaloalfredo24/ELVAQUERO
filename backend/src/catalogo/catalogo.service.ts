@@ -8,6 +8,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ElasticsearchService } from '../elasticsearch/elasticsearch.service';
 import {
   calcularDescuento,
   validarCupon as validarCuponReglas,
@@ -80,7 +81,10 @@ type ProductoConDetalle = Prisma.productosGetPayload<{
 
 @Injectable()
 export class CatalogoService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private elastic: ElasticsearchService,
+  ) {}
 
   // Convierte Decimal (Prisma) a number.
   private n(x: Prisma.Decimal | number | null | undefined): number {
@@ -302,6 +306,26 @@ export class CatalogoService {
   ): Promise<ProductoDTO[]> {
     const q = query.trim();
     if (!q) return [];
+
+    // Intenta con Elasticsearch (si está disponible).
+    const idsDesdeEs = await this.elastic.buscar(q, categoriaSlug);
+    if (idsDesdeEs !== null) {
+      if (idsDesdeEs.length === 0) return [];
+      const productos = await this.prisma.productos.findMany({
+        where: { id: { in: idsDesdeEs }, esta_activo: true },
+        include: {
+          categorias: true,
+          variantes_producto: { where: { esta_activo: true } },
+          imagenes_producto: { orderBy: { posicion: 'asc' } },
+          resenas: { where: { esta_aprobada: true } },
+        },
+      });
+      const mapa = new Map(productos.map((p) => [p.id, p]));
+      return idsDesdeEs
+        .map((id) => mapa.get(id))
+        .filter((p): p is NonNullable<typeof p> => Boolean(p))
+        .map((p) => this.aProductoDTO(p));
+    }
 
     // Filtro opcional por categoría (slug).
     const condCategoria = categoriaSlug

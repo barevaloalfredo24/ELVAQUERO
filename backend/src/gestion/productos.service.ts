@@ -13,11 +13,34 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { ElasticsearchService } from '../elasticsearch/elasticsearch.service';
+import { CatalogoService } from '../catalogo/catalogo.service';
 import { ActualizarProductoDto, CrearProductoDto, VarianteDto } from './dto';
 
 @Injectable()
 export class ProductosGestionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private elastic: ElasticsearchService,
+    private catalogo: CatalogoService,
+  ) {}
+
+  // Reindexa un producto en Elasticsearch tras crearlo/actualizarlo.
+  private async sincronizarProducto(id: string) {
+    const p = await this.catalogo.obtenerProductoPorId(id);
+    if (!p) return;
+    await this.elastic.indexarProducto({
+      id: p.id,
+      nombre: p.nombre,
+      descripcion: p.descripcion,
+      slug: p.slug,
+      precio: p.precio,
+      categoriaSlug: p.categoriaSlug,
+      categoriaNombre: p.categoriaNombre,
+      estaActivo: p.estaActivo,
+      imagen: p.imagenes?.[0]?.url ?? null,
+    });
+  }
 
   // Genera un SKU único (slug + talla + color + sufijo aleatorio).
   private generarSku(slug: string, talla: string, color: string): string {
@@ -76,6 +99,7 @@ export class ProductosGestionService {
       },
     });
 
+    await this.sincronizarProducto(id);
     return { id };
   }
 
@@ -129,6 +153,7 @@ export class ProductosGestionService {
       }
     });
 
+    await this.sincronizarProducto(id);
     return { id };
   }
 
@@ -148,6 +173,7 @@ export class ProductosGestionService {
       }),
     ]);
 
+    await this.elastic.eliminarProducto(id);
     return { id };
   }
 }

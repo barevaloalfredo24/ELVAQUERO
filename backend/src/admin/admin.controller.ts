@@ -67,4 +67,10 @@ export class AdminController {
   productos(): Promise<ProductoDTO[]> {
     return this.admin.listarProductos();
   }
+
+  // POST /api/admin/elasticsearch/sync  (reindexa todos los productos)
+  @Post('elasticsearch/sync')
+  sincronizarElasticsearch() {
+    return this.admin.sincronizarElasticsearch();
+  }
 }

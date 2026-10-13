@@ -18,6 +18,7 @@ import { MailModule } from './mail/mail.module';
 import { PagosModule } from './pagos/pagos.module';
 import { DeseosModule } from './deseos/deseos.module';
 import { ResenasModule } from './resenas/resenas.module';
+import { ElasticsearchModule } from './elasticsearch/elasticsearch.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ResenasModule } from './resenas/resenas.module';
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     MailModule,
+    ElasticsearchModule,
     CatalogoModule,
     AuthModule,
     OrdenesModule,

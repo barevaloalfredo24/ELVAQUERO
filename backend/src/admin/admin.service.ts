@@ -10,6 +10,7 @@ import { Prisma } from '@prisma/client';
 import type { estado_orden } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CatalogoService, ProductoDTO } from '../catalogo/catalogo.service';
+import { ElasticsearchService } from '../elasticsearch/elasticsearch.service';
 import { mapearEstado, mapearEstadoPago } from '../common/mapeos';
 import { UsuarioDTO } from '../auth/auth.service';
 
@@ -55,7 +56,26 @@ export class AdminService {
   constructor(
     private prisma: PrismaService,
     private catalogo: CatalogoService,
+    private elastic: ElasticsearchService,
   ) {}
+
+  // Sincroniza todos los productos en Elasticsearch (indexación inicial).
+  async sincronizarElasticsearch(): Promise<{ ok: boolean; total: number }> {
+    const productos = await this.catalogo.listarTodosLosProductos();
+    const docs = productos.map((p) => ({
+      id: p.id,
+      nombre: p.nombre,
+      descripcion: p.descripcion,
+      slug: p.slug,
+      precio: p.precio,
+      categoriaSlug: p.categoriaSlug,
+      categoriaNombre: p.categoriaNombre,
+      estaActivo: p.estaActivo,
+      imagen: p.imagenes?.[0]?.url ?? null,
+    }));
+    await this.elastic.reindexar(docs);
+    return { ok: this.elastic.disponible, total: docs.length };
+  }
 
   // Mapea una orden al DTO del frontend (mismo shape que /ordenes).
   private aOrdenDTO(o: OrdenConDetalle) {
