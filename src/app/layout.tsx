@@ -6,6 +6,7 @@
 // =====================================================================
 
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Proveedores } from "@/components/proveedores";
@@ -38,6 +39,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col bg-crema font-sans text-marron-900">
         {/* Proveedores globales envuelven todas las páginas. */}
         <Proveedores>{children}</Proveedores>
+
+        {/* Google Analytics (gtag.js) — una sola etiqueta global para todo el sitio. */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-PGZQJTQCFP"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-PGZQJTQCFP');
+          `}
+        </Script>
       </body>
     </html>
   );
