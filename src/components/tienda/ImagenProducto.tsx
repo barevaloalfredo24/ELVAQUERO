@@ -28,7 +28,7 @@ export function ImagenProducto({ producto }: { producto: Producto }) {
       <img
         src={urlImagen(url, 600)}
         alt={producto.nombre}
-        className="aspect-[4/3] w-full object-cover"
+        className="aspect-[3/4] w-full object-cover"
       />
     );
   }
@@ -37,7 +37,7 @@ export function ImagenProducto({ producto }: { producto: Producto }) {
 
   return (
     <div
-      className={`flex aspect-[4/3] w-full items-center justify-center ${color}`}
+      className={`flex aspect-[3/4] w-full items-center justify-center ${color}`}
       role="img"
       aria-label={producto.nombre}
     />

@@ -31,7 +31,7 @@ export function GaleriaProducto({ producto }: { producto: Producto }) {
     const color = colores[producto.categoriaSlug ?? ""] ?? "bg-marron-600";
     return (
       <div
-        className={`flex aspect-[4/3] w-full items-center justify-center rounded-2xl ${color}`}
+        className={`flex aspect-[3/4] w-full items-center justify-center rounded-2xl ${color}`}
         role="img"
         aria-label={producto.nombre}
       />
@@ -76,7 +76,7 @@ export function GaleriaProducto({ producto }: { producto: Producto }) {
         <img
           src={urlImagen(principal.url, 1000)}
           alt={producto.nombre}
-          className="aspect-[4/3] w-full object-cover"
+          className="aspect-[3/4] w-full object-cover"
         />
       </div>
     </div>
