@@ -1,13 +1,12 @@
 // =====================================================================
 // UTILIDAD DE IMAGEN (compresión/redimensionado en el navegador)
 // ---------------------------------------------------------------------
-// Redimensiona y recorta las imágenes antes de subirlas para que todas
-// queden del mismo tamaño (4:3, 1200x900) y con un peso reducido.
-// Usa <img> + FileReader para ser compatible con iOS/HEIC/Safari.
+// Redimensiona las imágenes antes de subirlas (manteniendo la proporción
+// original, SIN recortar) para reducir su peso. Usa <img> + FileReader
+// para ser compatible con iOS/HEIC/Safari.
 // =====================================================================
 
-const ANCHO = 1200;
-const ALTO = 900; // proporción 4:3
+const MAX_DIMENSION = 1600; // lado más largo máximo (px)
 const CALIDAD = 0.8;
 
 // Convierte un File en dataURL (la forma más compatible de decodificar).
@@ -30,39 +29,29 @@ function cargarImagen(src: string): Promise<HTMLImageElement> {
   });
 }
 
-// Redimensiona, recorta al centro (4:3) y comprime la imagen a JPEG.
+// Redimensiona (sin recortar) y comprime la imagen a JPEG.
 export async function comprimirImagen(archivo: File): Promise<Blob> {
   const dataUrl = await leerComoDataUrl(archivo);
   const imagen = await cargarImagen(dataUrl);
 
   const { naturalWidth: w, naturalHeight: h } = imagen;
-  const proporcionObjetivo = ANCHO / ALTO;
-  const proporcionFuente = w / h;
 
-  // Recorte central a 4:3.
-  let sx = 0;
-  let sy = 0;
-  let sw = w;
-  let sh = h;
-  if (proporcionFuente > proporcionObjetivo) {
-    sw = h * proporcionObjetivo;
-    sx = (w - sw) / 2;
-  } else {
-    sh = w / proporcionObjetivo;
-    sy = (h - sh) / 2;
-  }
+  // Escala manteniendo la proporción original (el lado más largo <= 1600px).
+  const escala = Math.min(1, MAX_DIMENSION / Math.max(w, h));
+  const ancho = Math.max(1, Math.round(w * escala));
+  const alto = Math.max(1, Math.round(h * escala));
 
   const canvas = document.createElement("canvas");
-  canvas.width = ANCHO;
-  canvas.height = ALTO;
+  canvas.width = ancho;
+  canvas.height = alto;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No se pudo procesar la imagen.");
 
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.fillStyle = "#ffffff"; // fondo blanco por si hay transparencia
-  ctx.fillRect(0, 0, ANCHO, ALTO);
-  ctx.drawImage(imagen, sx, sy, sw, sh, 0, 0, ANCHO, ALTO);
+  ctx.fillRect(0, 0, ancho, alto);
+  ctx.drawImage(imagen, 0, 0, ancho, alto);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
